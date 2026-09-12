@@ -49,4 +49,7 @@ own original FQCN.
 
 `SetPromotionPasswordSecret` is the one patch here with no earlier life in another module: the priority access
 password became a configuration field, and a shop already using the gate needs the word it was using written
-into the field once or it turns everyone away. It is a one-off like the rest and goes when the module does.
+into the field once or it turns everyone away. It writes `coming_soon/password/secret`, which is where the
+field lives now, and depends on `Ben\ComingSoon\Setup\Patch\Data\CopyPromotionPassword` so that a shop which
+had saved its own word under the old Promotion path keeps it and only an empty field is filled in. That is why
+`Ben_ComingSoon` is in this module's sequence. It is a one-off like the rest and goes when the module does.

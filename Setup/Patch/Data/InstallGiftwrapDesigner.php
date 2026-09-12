@@ -92,8 +92,8 @@ class InstallGiftwrapDesigner implements DataPatchInterface
             'sortOrder' => 500,
             'values' => [
                 'maxCharacters' => '30',
-                'tooltipTitle' => 'What goes in the message?',
-                'tooltipDescription' => 'A short line printed across the paper, repeated along the roll. Names and a greeting work best - up to 30 characters keeps it readable.',
+                'tooltipTitle' => 'Your message',
+                'tooltipDescription' => 'Your message is printed along the paper and repeats down the roll. A name and a short greeting work best; up to 30 characters keeps it easy to read.',
             ],
         ],
         'GiftwrapColor' => [

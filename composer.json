@@ -1,0 +1,91 @@
+{
+    "name": "benhath/m2-migration",
+    "version": "3.0.0",
+    "description": "Magento 2 Migration Module",
+    "type": "magento2-module",
+    "license": "proprietary",
+    "require": {
+        "benhath/m2-ai": "*",
+        "benhath/m2-asset": "*",
+        "benhath/m2-designer": "*",
+        "benhath/m2-designer-giftwrap": "*",
+        "benhath/m2-designer-photo": "*",
+        "benhath/m2-font": "*",
+        "benhath/m2-footer": "*",
+        "benhath/m2-giftwrap": "*",
+        "benhath/m2-order-flow": "*",
+        "benhath/m2-product": "*",
+        "benhath/m2-promotion": "*",
+        "benhath/m2-shipping": "*",
+        "benhath/m2-utils": "*",
+        "magento/framework": "*",
+        "magento/module-catalog": "*",
+        "magento/module-config": "*",
+        "magento/module-eav": "*",
+        "magento/module-sales": "*",
+        "magento/module-store": "*",
+        "php": ">=8.4"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-ai.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-asset.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-designer.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-designer-giftwrap.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-designer-photo.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-font.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-footer.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-giftwrap.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-order-flow.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-product.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-promotion.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-shipping.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/benhath/m2-utils.git"
+        }
+    ],
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Ben\\Migration\\": ""
+        }
+    }
+}

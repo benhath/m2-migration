@@ -20,12 +20,12 @@ use Magento\Framework\Setup\Patch\DataPatchInterface;
  */
 class MigrateGalleryEndpointConfig implements DataPatchInterface
 {
+    private const CONFIG_XML_PATH_ENDPOINT_UPLOAD = 'designer/endpoints/upload';
+
+    private const CONFIG_XML_PATH_GALLERY_UPLOAD_ENDPOINT = 'designer/gallery/upload_endpoint';
+
     // The path that has gone entirely, saved values and all
     private const REMOVED_PATH = 'designer/gallery/allow_multiple_uploads';
-
-    private const XML_PATH_ENDPOINT_UPLOAD = 'designer/endpoints/upload';
-
-    private const XML_PATH_GALLERY_UPLOAD_ENDPOINT = 'designer/gallery/upload_endpoint';
 
     public function __construct(
         private readonly Gate $gate,
@@ -48,16 +48,16 @@ class MigrateGalleryEndpointConfig implements DataPatchInterface
 
         $this->moduleDataSetup->startSetup();
 
-        foreach ($this->getSavedRows(self::XML_PATH_GALLERY_UPLOAD_ENDPOINT) as $row) {
+        foreach ($this->getSavedRows(self::CONFIG_XML_PATH_GALLERY_UPLOAD_ENDPOINT) as $row) {
             $scope = (string)$row['scope'];
             $scopeId = (int)$row['scope_id'];
 
             // An admin who has already answered the endpoint field keeps their answer
-            if (!$this->getSavedRows(self::XML_PATH_ENDPOINT_UPLOAD, $scope, $scopeId)) {
-                $this->configWriter->save(self::XML_PATH_ENDPOINT_UPLOAD, (string)$row['value'], $scope, $scopeId);
+            if (!$this->getSavedRows(self::CONFIG_XML_PATH_ENDPOINT_UPLOAD, $scope, $scopeId)) {
+                $this->configWriter->save(self::CONFIG_XML_PATH_ENDPOINT_UPLOAD, (string)$row['value'], $scope, $scopeId);
             }
 
-            $this->configWriter->delete(self::XML_PATH_GALLERY_UPLOAD_ENDPOINT, $scope, $scopeId);
+            $this->configWriter->delete(self::CONFIG_XML_PATH_GALLERY_UPLOAD_ENDPOINT, $scope, $scopeId);
         }
 
         foreach ($this->getSavedRows(self::REMOVED_PATH) as $row) {

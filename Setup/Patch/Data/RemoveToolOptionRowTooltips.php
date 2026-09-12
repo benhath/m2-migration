@@ -10,7 +10,7 @@ use Ben\Designer\Model\ResourceModel\ToolOption as ToolOptionResource;
 use Ben\Designer\Model\ResourceModel\ToolOption\CollectionFactory as ToolOptionCollectionFactory;
 use Ben\Designer\Model\ToolOption;
 use Ben\Migration\Model\Gate;
-use Ben\Utils\Helper\JsonValidator;
+use Ben\Utils\Model\JsonValidator;
 use Exception;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\Setup\ModuleDataSetupInterface;

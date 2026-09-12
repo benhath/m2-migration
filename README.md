@@ -46,3 +46,7 @@ Two classes were renamed on the way in, because `RemoveFreeShippingThresholdConf
 both Ben_Giftwrap and Ben_Promotion and a module has one namespace: they are
 `RemoveGiftwrapFreeShippingThresholdConfig` and `RemovePromotionFreeShippingThresholdConfig`, each aliasing its
 own original FQCN.
+
+`SetPromotionPasswordSecret` is the one patch here with no earlier life in another module: the priority access
+password became a configuration field, and a shop already using the gate needs the word it was using written
+into the field once or it turns everyone away. It is a one-off like the rest and goes when the module does.

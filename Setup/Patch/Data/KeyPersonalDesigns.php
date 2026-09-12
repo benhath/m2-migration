@@ -16,8 +16,9 @@ use Magento\Framework\Setup\Patch\DataPatchInterface;
  *
  * An art design was made from one customer's description and used to come back to anyone who asked for its id.
  * From this release it is fetched by its key instead, so every row made before the column existed needs one.
- * Only rows still without a key are touched, so running this again keys nothing a second time and a catalogue
- * design, which is nobody's in particular, is left as it is
+ * Only rows still without a key are touched, so running this again keys nothing a second time, and a design
+ * carrying no description is the catalogue's own Create Your Own paper rather than anybody's, so it is left as
+ * it is - keyed, it would drop out of every listing and the range would grow a second copy on the next install
  */
 class KeyPersonalDesigns implements DataPatchInterface
 {
@@ -52,7 +53,10 @@ class KeyPersonalDesigns implements DataPatchInterface
         $select = $connection->select()
             ->from($table, DesignInterface::DESIGN_ID)
             ->where(DesignInterface::TYPE . ' = ?', Options::TYPE_AI)
-            ->where($connection->quoteIdentifier(DesignInterface::KEY) . ' IS NULL');
+            ->where($connection->quoteIdentifier(DesignInterface::KEY) . ' IS NULL')
+            // A design made from somebody's description carries that description; the catalogue's own
+            // Create Your Own design carries none and belongs to the shop, so it keeps its id and stays public
+            ->where(DesignInterface::PROMPT . ' IS NOT NULL');
 
         foreach ($connection->fetchCol($select) as $designId) {
             $connection->update(

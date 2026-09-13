@@ -47,6 +47,16 @@ both Ben_Giftwrap and Ben_Promotion and a module has one namespace: they are
 `RemoveGiftwrapFreeShippingThresholdConfig` and `RemovePromotionFreeShippingThresholdConfig`, each aliasing its
 own original FQCN.
 
+`MoveAssetNotesToOwners` is the one patch here that has to run before a schema change rather than after one.
+`ben_asset` carried three documents for other modules -- the measurements, the note about the photograph and the
+note about the faces in it -- and each now has a table of its own: `ben_asset_quality`, `ben_designer_asset_quality`
+and `ben_giftwrap_face_summary`. Magento runs `db_schema` before data patches, so a release that dropped the
+columns would take the values away before this ever ran. The order is therefore: **3.0 keeps the three columns**,
+marked superseded in `Ben_Asset/etc/db_schema.xml`, with nothing reading or writing them; this patch copies every
+non-null value across on upgrade; **the release after 3.0 drops the columns**, which is on the after-3.0 list. It
+is INSERT IGNORE throughout, so a row the owning module has written since the upgrade is left alone and a second
+run has nothing to do.
+
 `SetPromotionPasswordSecret` is the one patch here with no earlier life in another module: the priority access
 password became a configuration field, and a shop already using the gate needs the word it was using written
 into the field once or it turns everyone away. It writes `coming_soon/password/secret`, which is where the

@@ -25,8 +25,8 @@ use Psr\Log\LoggerInterface;
  * the new pictures and takes the uploaded SVG it replaces away with it.
  *
  * Two names are corrected first, because the sample is drawn from the name and these two would read wrongly:
- * "Frauncess" carries a letter the typeface's own name does not have, and "Wild Nebraska 2" would draw the word
- * Wild, which is exactly what the other Wild Nebraska already draws. Each is matched on its id and the name
+ * "Frauncess" carries a letter the typeface's own name does not have, and the sample drawn in Illustrator never
+ * had it either, so the name is put right rather than the drawing. It is matched on its id and the name
  * that id holds together, so a site whose id 9 is some other font is left alone rather than renamed into
  * something it is not.
  *
@@ -38,7 +38,6 @@ class RenderFontPreviews implements DataPatchInterface
     // The name each id holds today, and what it should read, so an id alone is never enough to rename on
     private const array CORRECTED_NAMES_BY_ID = [
         9 => ['Frauncess', 'Fraunces'],
-        95 => ['Wild Nebraska 2', 'Nebraska'],
     ];
 
     private const string TABLE_ASSET = 'ben_asset';

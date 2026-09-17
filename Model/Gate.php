@@ -47,29 +47,6 @@ class Gate
         return false;
     }
 
-    /**
-     * Whether any scope has saved a row at the path. A default that only exists in config.xml is not a saved
-     * row and there is nothing to migrate from it
-     */
-    public function hasConfig(string $path): bool
-    {
-        $connection = $this->resourceConnection->getConnection();
-        $table = $this->resourceConnection->getTableName('core_config_data');
-
-        $found = (bool)$connection->fetchOne(
-            $connection->select()
-                ->from($table, 'config_id')
-                ->where('path = ?', $path)
-                ->limit(1)
-        );
-
-        if (!$found) {
-            $this->skip(sprintf('no site has saved config %s', $path));
-        }
-
-        return $found;
-    }
-
     public function hasModule(string $name): bool
     {
         if ($this->moduleManager->isEnabled($name)) {
@@ -79,32 +56,6 @@ class Gate
         $this->skip(sprintf('%s is not enabled on this site', $name));
 
         return false;
-    }
-
-    /**
-     * Whether the catalogue holds the SKU, read straight off the entity table so a product in any state counts
-     */
-    public function hasProduct(string $sku): bool
-    {
-        if (!$this->hasTable('catalog_product_entity')) {
-            return false;
-        }
-
-        $connection = $this->resourceConnection->getConnection();
-        $table = $this->resourceConnection->getTableName('catalog_product_entity');
-
-        $found = (bool)$connection->fetchOne(
-            $connection->select()
-                ->from($table, 'entity_id')
-                ->where('sku = ?', $sku)
-                ->limit(1)
-        );
-
-        if (!$found) {
-            $this->skip(sprintf('product %s is not in this catalogue', $sku));
-        }
-
-        return $found;
     }
 
     public function hasTable(string $table): bool

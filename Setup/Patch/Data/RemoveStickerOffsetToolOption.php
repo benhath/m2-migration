@@ -17,17 +17,18 @@ use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 
 /**
- * Drops the Preview tool's showOverlay option and the value every giftwrap product carried for it.
+ * Drops the Sticker Shape tool's defaultOffsetMm option and the value every sticker product carried for it.
  *
- * The option opened a place over the mockup for another tool to draw in, which only the face finder ever used,
- * to show the customer's photograph being read. That picture belongs with the face buttons it turns into, where
- * the customer is already looking, so it is drawn there now and the place over the mockup has gone with it.
+ * Where the blade clears the artwork before the customer touches the slider is the shop's decision, set once
+ * under Stores > Configuration > Designer > Vinyl Stickers and already read there by the cut file writer.
+ * Every product held the same number as that setting, so nothing is carried over: the rows are only removed,
+ * and the slider's own ends, the smallest and largest offsets a product allows, are left alone.
  */
-class RemovePreviewOverlayOption implements DataPatchInterface
+class RemoveStickerOffsetToolOption implements DataPatchInterface
 {
-    private const string OPTION_NAME = 'showOverlay';
+    private const string OPTION_NAME = 'defaultOffsetMm';
 
-    private const string TOOL_COMPONENT = 'Preview';
+    private const string TOOL_COMPONENT = 'StickerShape';
 
     public function __construct(
         private readonly Gate $gate,
@@ -55,15 +56,11 @@ class RemovePreviewOverlayOption implements DataPatchInterface
 
         $this->moduleDataSetup->startSetup();
 
-        $toolIds = $this->getPreviewToolIds();
+        $toolOptions = $this->getToolOptions($this->getToolIds());
 
-        if ($toolIds) {
-            $toolOptions = $this->getToolOptions($toolIds);
-
-            if ($toolOptions) {
-                $this->removeProductToolOptions(array_keys($toolOptions));
-                $this->removeToolOptions($toolOptions);
-            }
+        if ($toolOptions) {
+            $this->removeProductToolOptions(array_keys($toolOptions));
+            $this->removeToolOptions($toolOptions);
         }
 
         $this->moduleDataSetup->endSetup();
@@ -75,9 +72,11 @@ class RemovePreviewOverlayOption implements DataPatchInterface
     }
 
     /**
+     * A store may have more than one tool on the same component, so every one of them is cleaned
+     *
      * @return int[]
      */
-    private function getPreviewToolIds(): array
+    private function getToolIds(): array
     {
         $toolCollection = $this->toolCollectionFactory->create();
         $toolCollection->addFieldToFilter(ToolInterface::COMPONENT, self::TOOL_COMPONENT);
@@ -92,6 +91,10 @@ class RemovePreviewOverlayOption implements DataPatchInterface
      */
     private function getToolOptions(array $toolIds): array
     {
+        if (!$toolIds) {
+            return [];
+        }
+
         $toolOptionCollection = $this->toolOptionCollectionFactory->create();
         $toolOptionCollection->addFieldToFilter(ToolOptionInterface::TOOL_ID, ['in' => $toolIds]);
         $toolOptionCollection->addFieldToFilter(ToolOptionInterface::NAME, self::OPTION_NAME);

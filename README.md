@@ -9,9 +9,9 @@ the code a running shop needs.
   and naming that module's old FQCN in `getAliases()`, so a site that has already run it — dev, staging — sees it
   as applied and it never runs twice
 - `Ben\Migration\Model\Gate`, the question every migration asks before it touches anything: `hasModule()`,
-  `hasTable()`, `hasColumn()`, `hasConfig()` and `hasProduct()`. A no is one line in the log and an early return,
-  never a failed upgrade — the three sites run different modules and a migration written for one of them meets
-  tables that are simply not there on another
+  `hasTable()` and `hasColumn()`. A no is one line in the log and an early return, never a failed upgrade — the
+  three sites run different modules and a migration written for one of them meets tables that are simply not
+  there on another
 - Dependencies between the migrations are kept, so the chain still runs in the order it was written in
 
 ## Requirements
@@ -59,6 +59,11 @@ by the photograph, reached through the normalised copy that was actually sent, w
 five minutes, each generation claimed once -- and a row that matches nothing is inserted as a generation of its
 own, because the shop still made that call. A generation this patch has already described has a `kind`, which is
 what stops a second run claiming it again. The two keep-warm flags go too: the log answers both questions now.
+
+`RemoveOffshorePostcodesConfig` drops every `shipping_api/carrier_*/offshore_postcodes` row at every scope. Only
+DPD ever refused a postcode of its own and it left with 3.0, so the field is gone from the shipping section and
+nothing reads a saved row; each row removed is logged with its path and scope, and the run says how many went.
+Nothing is carried over, because the shop refuses nothing by postcode now.
 
 `MoveAiNotesToOneTable` puts `ben_designer_asset_quality` and `ben_giftwrap_face_summary` into Ben_Ai's
 `ben_ai_asset_note`, one table with the purpose saying which module wrote a note, resolving each note's

@@ -6,6 +6,8 @@ namespace Ben\Migration\Setup\Patch\Data;
 use Ben\Clean\Model\Config\SettingsAudit;
 use Ben\Clean\Model\Config\SettingsPurge;
 use Ben\Migration\Model\Gate;
+use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Exception\RuntimeException;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Psr\Log\LoggerInterface;
 
@@ -44,6 +46,7 @@ class PurgeRedundantConfig implements DataPatchInterface
             RemoveGiftwrapFreeShippingThresholdConfig::class,
             RemoveGiftwrapSizeFreeShippingThresholdOption::class,
             RemoveGlobalGalleryToolOptions::class,
+            RemoveOffshorePostcodesConfig::class,
             RemovePromotionFreeShippingThresholdConfig::class,
             RepointDesignsToActiveFonts::class,
             RetireStripPromoConfig::class,
@@ -52,6 +55,10 @@ class PurgeRedundantConfig implements DataPatchInterface
         ];
     }
 
+    /**
+     * @throws FileSystemException
+     * @throws RuntimeException
+     */
     public function apply(): void
     {
         if (!$this->gate->hasModule('Ben_Clean')) {

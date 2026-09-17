@@ -7,6 +7,7 @@ use Ben\Ai\Api\Data\GenerationInterface;
 use Ben\Giftwrap\Model\FaceV2\FaceLogger;
 use Ben\Migration\Model\Gate;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\FlagManager;
 use Magento\Framework\Math\Random;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
@@ -79,6 +80,9 @@ class MergeFaceLogIntoGenerationLog implements DataPatchInterface
         return [];
     }
 
+    /**
+     * @throws LocalizedException
+     */
     public function apply(): void
     {
         if (!$this->gate->hasTable(self::TABLE)) {
@@ -293,6 +297,8 @@ class MergeFaceLogIntoGenerationLog implements DataPatchInterface
     /**
      * A face log row that matched nothing, as a generation of its own. It is still the record of a call that was
      * made, and the log is the one place calls are recorded
+     *
+     * @throws LocalizedException
      */
     private function insert(array $row): void
     {

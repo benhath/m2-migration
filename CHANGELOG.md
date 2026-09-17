@@ -101,7 +101,7 @@ sites do not run the same modules. Every patch can be run again over a database 
     naming what went in the log, and then gets its unique key added by hand under the name declarative schema
     would have generated. The declaration is out of `Ben_Giftwrap/etc/db_schema.xml` for 3.0 only, because one
     duplicate pair on a live database would abort `setup:upgrade` with the schema half applied. It goes back in
-    the release after 3.0. **The NOT NULL columns and the two foreign keys on that table are still declarative
+    the release after 3.0, as do the NOT NULL columns. **The two foreign keys on that table are still declarative
     and still run before any patch** — see the pre-upgrade list.
 
 **Assets**

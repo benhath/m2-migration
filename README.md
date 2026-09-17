@@ -47,15 +47,23 @@ both Ben_Giftwrap and Ben_Promotion and a module has one namespace: they are
 `RemoveGiftwrapFreeShippingThresholdConfig` and `RemovePromotionFreeShippingThresholdConfig`, each aliasing its
 own original FQCN.
 
-`MoveAssetNotesToOwners` is the one patch here that has to run before a schema change rather than after one.
-`ben_asset` carried three documents for other modules -- the measurements, the note about the photograph and the
-note about the faces in it -- and each now has a table of its own: `ben_asset_quality`, `ben_designer_asset_quality`
-and `ben_giftwrap_face_summary`. Magento runs `db_schema` before data patches, so a release that dropped the
-columns would take the values away before this ever ran. The order is therefore: **3.0 keeps the three columns**,
-marked superseded in `Ben_Asset/etc/db_schema.xml`, with nothing reading or writing them; this patch copies every
-non-null value across on upgrade; **the release after 3.0 drops the columns**, which is on the after-3.0 list. It
-is INSERT IGNORE throughout, so a row the owning module has written since the upgrade is left alone and a second
-run has nothing to do.
+`MergeFaceLogIntoGenerationLog` and `MoveAiNotesToOneTable` are the two patches that take a table away rather
+than fill one in, and both drop it themselves. `db_schema` runs before data patches, so a table the declarative
+schema still knew about would be dropped before the patch could read it; instead the three old tables are
+declared no longer **and** taken out of their modules' `db_schema_whitelist.json`, the way `ben_giftwrap_font`
+was handled, which leaves them standing for the patch.
+
+`MergeFaceLogIntoGenerationLog` puts `ben_giftwrap_face_log` into `ben_ai_generation`, which now has the columns
+it was keeping on the side. A scan was written down twice, so its face log row is matched onto its generation --
+by the photograph, reached through the normalised copy that was actually sent, with the kinds agreeing, within
+five minutes, each generation claimed once -- and a row that matches nothing is inserted as a generation of its
+own, because the shop still made that call. A generation this patch has already described has a `kind`, which is
+what stops a second run claiming it again. The two keep-warm flags go too: the log answers both questions now.
+
+`MoveAiNotesToOneTable` puts `ben_designer_asset_quality` and `ben_giftwrap_face_summary` into Ben_Ai's
+`ben_ai_asset_note`, one table with the purpose saying which module wrote a note, resolving each note's
+`generation_hash` to the generation's own id on the way across. It is INSERT IGNORE throughout, so a note the
+owning module has written since the upgrade is left alone and a second run has nothing to do.
 
 `ConvertGiftwrapOrderItems` is the one patch here that rewrites order items. Every giftwrap line the old
 checkout took kept what the customer chose under a `giftwrap` key of its own, and a second set of classes in

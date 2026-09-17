@@ -57,6 +57,16 @@ non-null value across on upgrade; **the release after 3.0 drops the columns**, w
 is INSERT IGNORE throughout, so a row the owning module has written since the upgrade is left alone and a second
 run has nothing to do.
 
+`ConvertGiftwrapOrderItems` is the one patch here that rewrites order items. Every giftwrap line the old
+checkout took kept what the customer chose under a `giftwrap` key of its own, and a second set of classes in
+Ben_Giftwrap existed only to read it back; those classes are deleted in this release, so the items are converted
+to the designer's `designer_active_data` and `designer_type` instead, with the original options kept beside them
+under `giftwrap_legacy`. The roll length is named by the hash of the configured row of that length, the way a new
+item names it; the old checkout also sold lengths the picker no longer offers, and those items carry the length
+alone, which is why `OrderProductPopulator` prints the length the order says when no configured row answers to
+the hash. Old cart items are deliberately not converted: a cart is priced again on every load and the old
+checkout's add-to-cart is already gone, so an old line in a basket at cutover is one to clear rather than carry.
+
 `SetPromotionPasswordSecret` is the one patch here with no earlier life in another module: the priority access
 password became a configuration field, and a shop already using the gate needs the word it was using written
 into the field once or it turns everyone away. It writes `coming_soon/password/secret`, which is where the

@@ -22,8 +22,8 @@ use Psr\Log\LoggerInterface;
  * both an order file and an upload ends up an order file.
  *
  * Only rows with no role yet are touched, so running it again does nothing. Expiries are left exactly as they are
- * apart from the roles that never expire, which have theirs cleared: an image a model drew, a design sheet and an
- * asset the admin manages are not for a timer to delete.
+ * apart from the roles that never expire, which have theirs cleared: an image a model drew and an asset the admin
+ * manages are not for a timer to delete.
  */
 class BackfillExpiryRoles implements DataPatchInterface
 {
@@ -39,7 +39,6 @@ class BackfillExpiryRoles implements DataPatchInterface
     // Everything a model drew: table => columns holding the asset id
     private const TABLES_AI = [
         'ben_ai_generation' => ['asset_id', 'thumbnail_asset_id'],
-        'ben_giftwrap_design' => ['character_sheet_asset_id'],
     ];
 
     // What the print room made and what it made it from: table => columns holding the asset id

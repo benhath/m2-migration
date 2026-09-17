@@ -62,6 +62,11 @@ class MergeFaceLogIntoGenerationLog implements DataPatchInterface
             'failed' => GenerationInterface::STATUS_FAILED,
         ];
 
+    // Both names the face service's generations can be filed under. The rename has run by the time this does, so
+    // the old name should not be there any more; it is asked for anyway, because a row still carrying it would be
+    // matched against nothing and inserted a second time, and the log it came from is dropped at the end
+    private const array PROVIDERS = [GenerationInterface::PROVIDER_FACE_V2, RenameFaceoutProvider::OLD_PROVIDER];
+
     private const string TABLE = 'ben_giftwrap_face_log';
 
     private const array WARM_FLAGS = ['ben_giftwrap_face_last_ping', 'ben_giftwrap_face_last_upload'];
@@ -75,9 +80,15 @@ class MergeFaceLogIntoGenerationLog implements DataPatchInterface
     ) {
     }
 
+    /**
+     * A live 2.x database still files the face service's generations under the old provider name, and a face log
+     * row is matched against them by provider. The rename therefore has to have happened first, or every row here
+     * would match nothing, be inserted as a second generation of a call already recorded, and the log be dropped
+     * with no way back
+     */
     public static function getDependencies(): array
     {
-        return [];
+        return [RenameFaceoutProvider::class];
     }
 
     /**
@@ -173,7 +184,7 @@ class MergeFaceLogIntoGenerationLog implements DataPatchInterface
                 new Zend_Db_Expr("s.hash = JSON_UNQUOTE(JSON_EXTRACT(g.request, '$.source.hash'))"),
                 []
             )
-            ->where('g.' . GenerationInterface::PROVIDER . ' = ?', GenerationInterface::PROVIDER_FACE_V2)
+            ->where('g.' . GenerationInterface::PROVIDER . ' IN (?)', self::PROVIDERS)
             ->where('g.' . GenerationInterface::KIND . ' IS NULL');
 
         $candidates = [];

@@ -47,9 +47,14 @@ class ConvertGalleryFileTypesToFormats implements DataPatchInterface
     ) {
     }
 
+    /**
+     * The giftwrap install writes this option in the row shape it had before, so it has to have written it before
+     * this converts it; otherwise the option is created dead on a live giftwrap database and the admin form shows
+     * an empty multiselect that loses the value on the next save
+     */
     public static function getDependencies(): array
     {
-        return [];
+        return [InstallGiftwrapDesigner::class];
     }
 
     /**

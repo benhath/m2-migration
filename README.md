@@ -60,6 +60,29 @@ five minutes, each generation claimed once -- and a row that matches nothing is 
 own, because the shop still made that call. A generation this patch has already described has a `kind`, which is
 what stops a second run claiming it again. The two keep-warm flags go too: the log answers both questions now.
 
+`KeyDesignCategoriesByPair` is `ben_giftwrap_design_category`'s unique key on the design/category pair, handled
+the way `ben_giftwrap_font`'s key was. The pair has always been the real key and the admin save has always
+written it as though it were, but declaring it in `db_schema.xml` would have put it on before any data patch
+could run, and one duplicate pair left by an interrupted save on a live database aborts `setup:upgrade` with the
+schema half applied. The declaration is therefore out of Ben_Giftwrap for 3.0 - the schema file says so where it
+used to be - and this patch removes the duplicates first, keeping the lowest id of each pair and naming what it
+removed in the log, then adds the key itself under the exact name `ResourceConnection::getIdxName()` gives it,
+which is the name declarative schema generates. The declaration goes back into `db_schema.xml` in the release
+after 3.0 and finds its key already standing. The NOT NULL columns and the two foreign keys on that table are
+still declared and still run before any patch, so the orphan and NULL checks in the launch audit are run against
+each live database immediately before the deploy.
+
+`PurgeRedundantConfig` and `DropRemovedModuleLeftovers` are the two patches here that remove something nobody
+asked them to, unattended, inside `setup:upgrade` on a live database. Both write the whole list of what they are
+about to do to the log before they do any of it, because a row or a table removed unattended has no other record.
+The purge never touches a path under `payment/`, `carriers/` or `web/secure/` whatever the audit says about it:
+a payment or carrier setting removed in the release window is a shop that stops taking money and a secure base
+URL removed is a shop served over plain HTTP, and those are worth more than a tidy `core_config_data`. Pinned
+rows the audit would have removed are reported instead, for a person to remove afterwards. The leftover drop
+writes a test file into `backups/work/removed-modules/<date>` first and, if it cannot, drops nothing at all and
+says so: a table dropped with no dump behind it is the one thing here that cannot be undone. Neither refusal
+fails the upgrade.
+
 `RemoveOffshorePostcodesConfig` drops every `shipping_api/carrier_*/offshore_postcodes` row at every scope. Only
 DPD ever refused a postcode of its own and it left with 3.0, so the field is gone from the shipping section and
 nothing reads a saved row; each row removed is logged with its path and scope, and the run says how many went.

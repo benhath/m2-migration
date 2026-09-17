@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Ben\Migration\Setup\Patch\Data;
 
+use Ben\Ai\Api\Data\GenerationInterface;
 use Ben\Asset\Api\AssetKindInterface;
 use Ben\Asset\Api\Data\AssetInterface;
 use Ben\Asset\Api\ExpiryRoleInterface;
@@ -60,8 +61,10 @@ class BackfillAssetKinds implements DataPatchInterface
         'asset/zip/' => AssetKindInterface::DOWNLOAD,
     ];
 
-    // The provider whose generated asset is a customer's own face rather than something a model drew
-    private const string FACE_V2_PROVIDER = 'face_v2';
+    // The providers whose generated asset is a customer's own face rather than something a model drew. The old
+    // name is asked for as well as the new one: the rename runs first, but a row that somehow still carried it
+    // would be kinded ai_image and given a drawing's retention rather than a face crop's
+    private const array FACE_PROVIDERS = [GenerationInterface::PROVIDER_FACE_V2, RenameFaceoutProvider::OLD_PROVIDER];
 
     // How many directories of rows left without a kind are named in the log, longest lists first
     private const int LEFTOVER_DIRECTORIES = 20;
@@ -98,9 +101,13 @@ class BackfillAssetKinds implements DataPatchInterface
     ) {
     }
 
+    /**
+     * The face service's rows carry the old provider name until the rename has run, and a face crop kinded as a
+     * drawing is given a drawing's retention, so the rename is named rather than left to alphabetical order
+     */
     public static function getDependencies(): array
     {
-        return [BackfillExpiryRoles::class];
+        return [BackfillExpiryRoles::class, RenameFaceoutProvider::class];
     }
 
     public function apply(): void
@@ -233,7 +240,7 @@ class BackfillAssetKinds implements DataPatchInterface
 
         $select = $connection->select()
             ->from($table, ['asset_id'])
-            ->where('provider = ?', self::FACE_V2_PROVIDER)
+            ->where('provider IN (?)', self::FACE_PROVIDERS)
             ->where('asset_id IS NOT NULL');
 
         return array_map('intval', $connection->fetchCol($select));

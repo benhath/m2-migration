@@ -18,12 +18,16 @@ use Magento\Framework\Setup\Patch\DataPatchInterface;
  */
 class RenameFaceoutProvider implements DataPatchInterface
 {
+    /**
+     * The name the rows carry until this patch has run. Public because the patches that read the face service's
+     * rows have to be able to recognise a database this has not reached yet
+     */
+    public const string OLD_PROVIDER = 'faceout';
+
     // The name the service answers to now; whatever followed the old prefix is the endpoint and is kept
     private const string NEW_MODEL_PREFIX = 'face-v2/';
 
     private const string OLD_MODEL_PREFIX = 'faceout/';
-
-    private const string OLD_PROVIDER = 'faceout';
 
     private const string TABLE = 'ben_ai_generation';
 

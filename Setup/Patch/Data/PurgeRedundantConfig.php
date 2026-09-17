@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Ben\Migration\Setup\Patch\Data;
 
+use Ben\Clean\Model\Config\SavedSetting;
 use Ben\Clean\Model\Config\SettingsAudit;
 use Ben\Clean\Model\Config\SettingsPurge;
 use Ben\Migration\Model\Gate;
@@ -20,11 +21,26 @@ use Psr\Log\LoggerInterface;
  * config:remove-defaults and config:remove-unused, both run once. It waits for every patch here that moves or
  * retires config, because a path those still have to carry across must not be removed first. Rows belonging to a
  * module that is only switched off are never touched, and nothing outside core_config_data is: the setup_module
- * rows and tables a removed module left behind are for config:remove-unused to report and a person to drop. Each
- * removed path and scope is logged; the value never is, since some of these rows may once have held a key.
+ * rows and tables a removed module left behind are for config:remove-unused to report and a person to drop.
+ *
+ * This runs unattended inside setup:upgrade, so two things are true of it. The whole list of what is about to go
+ * is written to the log before a single row is deleted, which is the only record there will be of a row nobody
+ * chose to lose. And three groups of paths are pinned and never removed whatever the audit says about them:
+ * payment methods, carriers and the secure base URLs. A payment or carrier setting the audit calls redundant is
+ * still a shop that stops taking money, and a secure URL removed in the release window is a shop served over
+ * plain HTTP; the few stale rows those prefixes keep are cheaper than either. They are reported instead, and a
+ * person removes them afterwards if they really are dead.
+ *
+ * Each removed path and scope is logged; the value never is, since some of these rows may once have held a key.
  */
 class PurgeRedundantConfig implements DataPatchInterface
 {
+    /**
+     * The path prefixes nothing here removes. Payments and carriers keep a shop trading and web/secure keeps it
+     * served over HTTPS, and none of the three is worth a tidy core_config_data
+     */
+    private const array PINNED_PREFIXES = ['carriers/', 'payment/', 'web/secure/'];
+
     public function __construct(
         private readonly Gate $gate,
         private readonly LoggerInterface $logger,
@@ -65,13 +81,85 @@ class PurgeRedundantConfig implements DataPatchInterface
             return;
         }
 
-        foreach ($this->settingsPurge->purge($this->settingsAudit->getFindings()) as $setting) {
-            $this->logger->info(sprintf('Ben_Migration removed saved setting %s: %s', $setting->getLabel(), $setting->getReason()));
+        $offered = [];
+        $pinned = [];
+
+        foreach ($this->settingsAudit->getFindings() as $setting) {
+            if ($this->isPinned($setting)) {
+                $pinned[] = $setting;
+
+                continue;
+            }
+
+            $offered[] = $setting;
+        }
+
+        $this->announce($offered, $pinned);
+
+        foreach ($this->settingsPurge->purge($offered) as $setting) {
+            $this->logger->info(
+                sprintf('Ben_Migration removed saved setting %s: %s', $setting->getLabel(), $setting->getReason())
+            );
         }
     }
 
     public function getAliases(): array
     {
         return [];
+    }
+
+    /**
+     * Everything that is about to go, and everything held back, written out before the first row is deleted. A
+     * row removed unattended has no other record, so the list goes in the log whether anyone reads it or not
+     *
+     * @param SavedSetting[] $offered
+     * @param SavedSetting[] $pinned
+     */
+    private function announce(array $offered, array $pinned): void
+    {
+        $isPurgeable = static fn (SavedSetting $setting): bool => $setting->isPurgeable();
+        $removing = array_values(array_filter($offered, $isPurgeable));
+        $kept = array_values(array_filter($pinned, $isPurgeable));
+
+        $this->logger->info(sprintf(
+            'Ben_Migration is about to remove %d saved setting(s): %s',
+            count($removing),
+            $this->getList($removing),
+        ));
+
+        if ($kept !== []) {
+            $this->logger->info(sprintf(
+                'Ben_Migration kept %d saved setting(s) the audit would have removed, because payment, carrier and'
+                . ' secure URL settings are pinned through the release: %s',
+                count($kept),
+                $this->getList($kept),
+            ));
+        }
+    }
+
+    /**
+     * @param SavedSetting[] $settings
+     */
+    private function getList(array $settings): string
+    {
+        if ($settings === []) {
+            return 'none';
+        }
+
+        return implode(', ', array_map(
+            static fn (SavedSetting $setting): string => $setting->getLabel() . ' - ' . $setting->getReason(),
+            $settings,
+        ));
+    }
+
+    private function isPinned(SavedSetting $setting): bool
+    {
+        foreach (self::PINNED_PREFIXES as $prefix) {
+            if (str_starts_with($setting->getPath(), $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

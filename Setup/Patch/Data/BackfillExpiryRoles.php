@@ -54,7 +54,6 @@ class BackfillExpiryRoles implements DataPatchInterface
         'ben_font' => ['asset_id', 'preview_asset_id'],
         'ben_giftwrap_category' => ['icon_asset_id'],
         'ben_giftwrap_design' => ['tile_asset_id', 'tile_compressed_asset_id', 'tile_print_asset_id', 'preview_asset_id'],
-        'ben_giftwrap_font' => ['asset_id', 'preview_asset_id'],
         'ben_giftwrap_overlay' => ['overlay_asset_id'],
     ];
 

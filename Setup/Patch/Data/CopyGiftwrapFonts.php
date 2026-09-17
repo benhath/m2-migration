@@ -17,8 +17,8 @@ use Psr\Log\LoggerInterface;
  * setting and the art range's typography setting all name; a copy that renumbered would silently repoint every
  * one of them. A row already in the new table is left exactly as it is, so the patch can be run again safely.
  *
- * The old table is not dropped here. It stays until every site is on 3.0 and its rows have been seen in the
- * new one, and is then dropped by hand.
+ * The old table is not dropped here, because this patch is already recorded on the databases that ran it and
+ * would never run again. KeyDesignsToFontCatalogue drops it, once it has checked the rows are in the new one.
  */
 class CopyGiftwrapFonts implements DataPatchInterface
 {

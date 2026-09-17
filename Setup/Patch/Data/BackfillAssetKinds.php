@@ -71,11 +71,8 @@ class BackfillAssetKinds implements DataPatchInterface
         ],
         AssetKindInterface::FEED_IMAGE => ['ben_designer_feed_item' => ['preview_asset_id']],
         AssetKindInterface::FEED_STOCK => ['ben_designer_feed_item' => ['stock_asset_id']],
-        AssetKindInterface::FONT => ['ben_font' => ['asset_id'], 'ben_giftwrap_font' => ['asset_id']],
-        AssetKindInterface::FONT_PREVIEW => [
-            'ben_font' => ['preview_asset_id'],
-            'ben_giftwrap_font' => ['preview_asset_id'],
-        ],
+        AssetKindInterface::FONT => ['ben_font' => ['asset_id']],
+        AssetKindInterface::FONT_PREVIEW => ['ben_font' => ['preview_asset_id']],
         AssetKindInterface::FRAME_CORNER => ['ben_designer_frame_profile' => ['corner_asset_id']],
         AssetKindInterface::FRAME_SAMPLE => ['ben_designer_frame_finish' => ['swatch_asset_id']],
         AssetKindInterface::OVERLAY => ['ben_giftwrap_overlay' => ['overlay_asset_id']],

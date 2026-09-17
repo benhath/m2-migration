@@ -9,6 +9,7 @@ use Ben\Migration\Model\Gate;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
+use Magento\Framework\Setup\Patch\NonTransactionableInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -33,8 +34,11 @@ use Throwable;
  * table could not be dumped is a worse outcome than a dead Yotpo table, and the patch is written so a person can
  * run the command by hand afterwards. Only the names and how many rows they held are logged, never what was in
  * them.
+ *
+ * It drops tables, and Magento refuses DDL inside the transaction it wraps a data patch in; run inside one the
+ * drop also waited forever on a metadata lock the same transaction held. The patch is therefore non-transactionable.
  */
-class DropRemovedModuleLeftovers implements DataPatchInterface
+class DropRemovedModuleLeftovers implements DataPatchInterface, NonTransactionableInterface
 {
     // What is written into the dump directory to find out whether it can actually be written to
     private const string WRITE_TEST_FILE = '.ben-migration-write-test';

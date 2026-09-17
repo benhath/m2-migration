@@ -11,6 +11,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\FlagManager;
 use Magento\Framework\Math\Random;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
+use Magento\Framework\Setup\Patch\NonTransactionableInterface;
 use Psr\Log\LoggerInterface;
 use Zend_Db_Expr;
 
@@ -31,8 +32,11 @@ use Zend_Db_Expr;
  * The two keep-warm flags go with it. They said when the service was last knocked on and when a customer's photo
  * last went through, which the log now answers by itself, and a second copy of a fact is a fact that can disagree
  * with itself.
+ *
+ * It alters a table, and Magento refuses DDL inside the transaction it wraps a data patch in, so the patch is
+ * marked non-transactionable and runs on its own.
  */
-class MergeFaceLogIntoGenerationLog implements DataPatchInterface
+class MergeFaceLogIntoGenerationLog implements DataPatchInterface, NonTransactionableInterface
 {
     // Which endpoint each kind was, for the model column
     private const array ENDPOINTS

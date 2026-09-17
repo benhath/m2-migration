@@ -60,8 +60,12 @@ class CopyGiftwrapFonts implements DataPatchInterface
             FontInterface::NAME,
             FontInterface::ASSET_ID,
             FontInterface::PREVIEW_ASSET_ID,
-            FontInterface::IS_ACTIVE,
         ];
+
+        // A 2.x site has no is_active on the old table; the new table's default (active) stands in for it
+        if ($this->gate->hasColumn(self::TABLE_OLD, FontInterface::IS_ACTIVE)) {
+            $columns[] = FontInterface::IS_ACTIVE;
+        }
 
         $select = $connection->select()->from($oldTable, $columns);
 

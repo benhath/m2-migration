@@ -7,6 +7,7 @@ use Ben\Migration\Model\Gate;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
+use Magento\Framework\Setup\Patch\NonTransactionableInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -23,8 +24,11 @@ use Psr\Log\LoggerInterface;
  * The lowest id of each duplicated pair is the one kept, because it is the row every other table would have been
  * pointing at; the rest are counted and their pairs named in the log. Every step asks whether it has already been
  * done, so a second run has nothing to do.
+ *
+ * It alters a table, and Magento refuses DDL inside the transaction it wraps a data patch in, so the patch is
+ * marked non-transactionable and runs on its own.
  */
-class KeyDesignCategoriesByPair implements DataPatchInterface
+class KeyDesignCategoriesByPair implements DataPatchInterface, NonTransactionableInterface
 {
     private const string COLUMN_CATEGORY = 'category_id';
 

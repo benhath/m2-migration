@@ -9,6 +9,7 @@ use Ben\Migration\Model\Gate;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
+use Magento\Framework\Setup\Patch\NonTransactionableInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -22,8 +23,11 @@ use Psr\Log\LoggerInterface;
  *
  * The old table is dropped at the end, once its rows are known to be in the catalogue. Every step asks whether
  * it has already been done, so the patch can be run again on a site that stopped halfway.
+ *
+ * It alters a table, and Magento refuses DDL inside the transaction it wraps a data patch in, so the patch is
+ * marked non-transactionable and runs on its own.
  */
-class KeyDesignsToFontCatalogue implements DataPatchInterface
+class KeyDesignsToFontCatalogue implements DataPatchInterface, NonTransactionableInterface
 {
     private const string TABLE_DESIGN = 'ben_giftwrap_design';
 

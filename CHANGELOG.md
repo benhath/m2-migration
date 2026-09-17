@@ -217,6 +217,12 @@ sites do not run the same modules. Every patch can be run again over a database 
   not a data migration.
 - **Design 488, the old face paper, is gone with its face crops.** 1,153 historical items cannot be reprinted.
   If reprints are ever needed, restore it as type photo.
+- Found by the 2026-09-17 rehearsal on a real 2.x dump, and fixed: the five patches that alter tables
+  (`KeyDesignCategoriesByPair`, `KeyDesignsToFontCatalogue`, `MergeFaceLogIntoGenerationLog`,
+  `MoveAiNotesToOneTable`, `DropRemovedModuleLeftovers`) now run outside the transaction Magento wraps a data patch
+  in, because Magento refuses DDL inside one and the table drop also waited forever on a lock the same transaction
+  held. `CopyGiftwrapFonts` copies `is_active` only where the old table has it; a 2.x site does not, and the new
+  table's default stands in.
 
 ## Removed
 

@@ -10,6 +10,7 @@ use Ben\Migration\Model\Gate;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
+use Magento\Framework\Setup\Patch\NonTransactionableInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -24,8 +25,11 @@ use Psr\Log\LoggerInterface;
  * is resolved to the generation's own id on the way across and kept as a foreign key. A note whose generation has
  * since been deleted comes over without one: the sentence a customer saw is the thing worth keeping, and the
  * exchange behind it was already allowed to go.
+ *
+ * It alters a table, and Magento refuses DDL inside the transaction it wraps a data patch in, so the patch is
+ * marked non-transactionable and runs on its own.
  */
-class MoveAiNotesToOneTable implements DataPatchInterface
+class MoveAiNotesToOneTable implements DataPatchInterface, NonTransactionableInterface
 {
     private const string TABLE = 'ben_ai_asset_note';
 

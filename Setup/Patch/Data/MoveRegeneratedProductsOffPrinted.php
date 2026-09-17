@@ -15,7 +15,7 @@ use Psr\Log\LoggerInterface;
  * take them for new work. Regeneration now has its own flag and date, so those rows are moved onto it and printed
  * goes back to meaning the print room took the file.
  *
- * The print room always writes printed_at alongside has_printed, so a printed row with no date can only have come
+ * The print room always writes the last printed date alongside has_printed, so a printed row with no date can only have come
  * from a regeneration. The regeneration date is the moment its file was made, or the row's last change when the
  * file never rendered. A moved row no longer matches, so running it again does nothing.
  */
@@ -66,7 +66,7 @@ class MoveRegeneratedProductsOffPrinted implements DataPatchInterface
             ],
             [
                 ProductInterface::HAS_PRINTED . ' = ?' => 1,
-                ProductInterface::PRINTED_AT . ' IS NULL',
+                ProductInterface::LAST_PRINTED_AT . ' IS NULL',
             ],
         );
 

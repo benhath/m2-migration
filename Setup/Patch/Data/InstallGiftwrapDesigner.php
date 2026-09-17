@@ -56,7 +56,6 @@ class InstallGiftwrapDesigner implements DataPatchInterface
             'values' => [
                 'resultDestination' => 'design',
                 'placeholder' => 'Cute fluffy baby cats with Santa hats',
-                'maxCharacters' => '200',
                 'description' => 'Describe your masterpiece.',
                 'busyMessage' => 'Assembling the pixels...',
             ],
@@ -154,7 +153,6 @@ class InstallGiftwrapDesigner implements DataPatchInterface
             'options' => [
                 'resultDestination' => 'string',
                 'placeholder' => 'string',
-                'maxCharacters' => 'string',
                 'description' => 'string',
                 'busyMessage' => 'string',
                 'tooltipTitle' => 'string',

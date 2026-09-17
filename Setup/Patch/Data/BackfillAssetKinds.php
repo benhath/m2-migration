@@ -10,6 +10,7 @@ use Ben\Migration\Model\Gate;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Psr\Log\LoggerInterface;
+use Zend_Db_Expr;
 
 /**
  * Gives every asset already in the table the kind whatever made it would name today
@@ -21,14 +22,15 @@ use Psr\Log\LoggerInterface;
  *
  * Only rows with no kind yet are touched, so running it again does nothing. What still cannot be placed is left
  * NULL rather than guessed at, since a wrong kind is worse than none: a grid filtering on kind would show it.
+ * What is left is counted and its directories named in the log, so the next person knows what was not placed.
  */
 class BackfillAssetKinds implements DataPatchInterface
 {
     // Rows read, or ids updated, per statement, so a big table is a series of small passes
-    private const BATCH_SIZE = 500;
+    private const int BATCH_SIZE = 500;
 
     // Where each creator writes, as the file_path prefix it produces: prefix => kind
-    private const DIRECTORIES = [
+    private const array DIRECTORIES = [
         'asset/cart-thumbnail/email/' => AssetKindInterface::EMAIL_THUMBNAIL,
         'asset/designer/base/' => AssetKindInterface::CART_THUMBNAIL,
         'asset/designer/feed/stock/' => AssetKindInterface::FEED_STOCK,
@@ -38,6 +40,7 @@ class BackfillAssetKinds implements DataPatchInterface
         'asset/designer/image/upload/' => AssetKindInterface::UPLOAD,
         'asset/designer/mockup/' => AssetKindInterface::PREVIEW,
         'asset/designer/personalise/' => AssetKindInterface::PREVIEW,
+        'asset/designer/portrait-demo/' => AssetKindInterface::UPLOAD,
         'asset/designer/thumbnail/' => AssetKindInterface::UPLOAD_THUMBNAIL,
         'asset/giftwrap/artwork/' => AssetKindInterface::GIFTWRAP_PREVIEW,
         'asset/giftwrap/blank/' => AssetKindInterface::PLACEHOLDER,
@@ -58,10 +61,17 @@ class BackfillAssetKinds implements DataPatchInterface
     ];
 
     // The provider whose generated asset is a customer's own face rather than something a model drew
-    private const FACE_V2_PROVIDER = 'face_v2';
+    private const string FACE_V2_PROVIDER = 'face_v2';
+
+    // How many directories of rows left without a kind are named in the log, longest lists first
+    private const int LEFTOVER_DIRECTORIES = 20;
+
+    // How much of a file path the log reads, in slash separated parts. Three reaches the end of the longest
+    // creator directory; the hashed folders a file is scattered into underneath it are dropped afterwards
+    private const int LEFTOVER_DIRECTORY_PARTS = 3;
 
     // What another table names, and so cannot be mistaken: kind => table => columns holding the asset id
-    private const REFERENCES = [
+    private const array REFERENCES = [
         AssetKindInterface::AI_IMAGE => ['ben_ai_generation' => ['asset_id']],
         AssetKindInterface::AI_THUMBNAIL => ['ben_ai_generation' => ['thumbnail_asset_id']],
         AssetKindInterface::CATEGORY_ICON => ['ben_giftwrap_category' => ['icon_asset_id']],
@@ -95,17 +105,15 @@ class BackfillAssetKinds implements DataPatchInterface
 
     public function apply(): void
     {
-        if (!$this->gate->hasColumn('ben_asset', 'kind')) {
-            return;
-        }
-
         $connection = $this->resourceConnection->getConnection();
         $table = $this->getTable('ben_asset');
 
-        // The column was added moments ago by the schema upgrade, and the cached description still predates it
+        // The column was added moments ago by the schema upgrade and the cached description still predates it, so
+        // the cache goes before anything asks whether the column is there. The gate reads that same description,
+        // and a stale answer would have it report the column missing and let the patch pass as applied
         $connection->resetDdlCache($table);
 
-        if (!$connection->tableColumnExists($table, AssetInterface::KIND)) {
+        if (!$this->gate->hasColumn('ben_asset', AssetInterface::KIND)) {
             return;
         }
 
@@ -130,6 +138,8 @@ class BackfillAssetKinds implements DataPatchInterface
         foreach ($counts as $kind => $count) {
             $this->logger->info(sprintf('Asset kind backfill: %d rows given the %s kind', $count, $kind));
         }
+
+        $this->reportLeftovers();
     }
 
     public function getAliases(): array
@@ -270,5 +280,59 @@ class BackfillAssetKinds implements DataPatchInterface
     private function getTable(string $table): string
     {
         return $this->resourceConnection->getTableName($table);
+    }
+
+    /**
+     * What the passes above could not place, counted and with its busiest directories named
+     *
+     * A row left without a kind is invisible to the purge page and to the kind registry, so the log says how many
+     * there are and where they sit rather than leaving somebody to find out from an empty grid.
+     */
+    private function reportLeftovers(): void
+    {
+        $connection = $this->resourceConnection->getConnection();
+        $table = $this->getTable('ben_asset');
+        $directory = new Zend_Db_Expr(
+            sprintf("SUBSTRING_INDEX(%s, '/', %d)", AssetInterface::FILE_PATH, self::LEFTOVER_DIRECTORY_PARTS)
+        );
+
+        $left = (int)$connection->fetchOne(
+            $connection->select()
+                ->from($table, new Zend_Db_Expr('COUNT(*)'))
+                ->where(AssetInterface::KIND . ' IS NULL')
+        );
+
+        $this->logger->info(sprintf('Asset kind backfill: %d rows left without a kind', $left));
+
+        if ($left === 0) {
+            return;
+        }
+
+        $select = $connection->select()
+            ->from($table, ['directory' => $directory, 'total' => new Zend_Db_Expr('COUNT(*)')])
+            ->where(AssetInterface::KIND . ' IS NULL')
+            ->group('directory');
+        $totals = [];
+
+        // A creator's directory is shallower than the three parts read, and what follows is the single letter
+        // folders a hash is scattered into, so dropping those gathers one creator's rows back into one line
+        foreach ($connection->fetchAll($select) as $row) {
+            $parts = explode('/', (string)$row['directory']);
+
+            while ($parts && strlen((string)end($parts)) === 1) {
+                array_pop($parts);
+            }
+
+            $directoryName = implode('/', $parts);
+            $totals[$directoryName] = ($totals[$directoryName] ?? 0) + (int)$row['total'];
+        }
+
+        arsort($totals);
+
+        foreach (array_slice($totals, 0, self::LEFTOVER_DIRECTORIES, true) as $directoryName => $total) {
+            $this->logger->info(
+                sprintf('Asset kind backfill: %d rows under %s have no kind', $total, $directoryName)
+            );
+        }
     }
 }

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Ben\Migration\Setup\Patch\Data;
 
+use Ben\Asset\Api\AssetKindInterface;
 use Ben\Asset\Api\Data\AssetInterface;
 use Ben\Asset\Api\ExpiryRoleInterface;
 use Ben\Asset\Model\AssetExpiry;
@@ -12,6 +13,7 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Select;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Psr\Log\LoggerInterface;
+use Zend_Db_Expr;
 
 /**
  * Gives every asset already in the table the role it would have been created with
@@ -23,31 +25,54 @@ use Psr\Log\LoggerInterface;
  *
  * Only rows with no role yet are touched, so running it again does nothing. Expiries are left exactly as they are
  * apart from the roles that never expire, which have theirs cleared: an image a model drew and an asset the admin
- * manages are not for a timer to delete.
+ * manages are not for a timer to delete. A row nothing points at and whose kind says nothing certain keeps no role
+ * at all, because a role decides how long a file is kept and a guess there deletes somebody's photo.
  */
 class BackfillExpiryRoles implements DataPatchInterface
 {
     // Rows read, or ids updated, per statement, so a big table is a series of small passes
-    private const BATCH_SIZE = 500;
+    private const int BATCH_SIZE = 500;
 
     // The option a designer writes its whole saved state into, on a cart item and on an order item alike
-    private const DESIGNER_OPTION_CODE = 'designer_active_data';
+    private const string DESIGNER_OPTION_CODE = 'designer_active_data';
 
     // A hash is 32 hex characters, which is enough to pick the assets out of a saved option blob
-    private const HASH_PATTERN = '/[a-f0-9]{32}/i';
+    private const string HASH_PATTERN = '/[a-f0-9]{32}/i';
+
+    // What a kind settles on its own, for rows nothing points at: kind => role. Only the kinds whose creator
+    // always passes the same role are here. A kind that is kept because the admin manages it is left out on
+    // purpose: permanence is granted by the row pointing at the asset, never by the directory it sits in, so a
+    // superseded tile or preview nothing references keeps no role instead of being promised forever
+    private const array KIND_ROLES = [
+        AssetKindInterface::AI_IMAGE => ExpiryRoleInterface::AI,
+        AssetKindInterface::AI_PORTRAIT => ExpiryRoleInterface::AI,
+        AssetKindInterface::AI_THUMBNAIL => ExpiryRoleInterface::AI,
+        AssetKindInterface::CART_THUMBNAIL => ExpiryRoleInterface::CART,
+        AssetKindInterface::DOWNLOAD => ExpiryRoleInterface::DOWNLOAD,
+        AssetKindInterface::EMAIL_THUMBNAIL => ExpiryRoleInterface::EMAIL,
+        AssetKindInterface::FACE_CROP => ExpiryRoleInterface::UPLOAD,
+        AssetKindInterface::FACE_SOURCE => ExpiryRoleInterface::PREVIEW,
+        AssetKindInterface::FEED_IMAGE => ExpiryRoleInterface::FEED,
+        AssetKindInterface::FEED_THUMBNAIL => ExpiryRoleInterface::FEED,
+        AssetKindInterface::GIFTWRAP_PREVIEW => ExpiryRoleInterface::GIFTWRAP_PREVIEW,
+        AssetKindInterface::PREVIEW => ExpiryRoleInterface::PREVIEW,
+        AssetKindInterface::SHEET => ExpiryRoleInterface::AI,
+        AssetKindInterface::UPLOAD => ExpiryRoleInterface::UPLOAD,
+        AssetKindInterface::UPLOAD_THUMBNAIL => ExpiryRoleInterface::UPLOAD_THUMBNAIL,
+    ];
 
     // Everything a model drew: table => columns holding the asset id
-    private const TABLES_AI = [
+    private const array TABLES_AI = [
         'ben_ai_generation' => ['asset_id', 'thumbnail_asset_id'],
     ];
 
     // What the print room made and what it made it from: table => columns holding the asset id
-    private const TABLES_ORDER = [
+    private const array TABLES_ORDER = [
         'ben_product' => ['asset_id', 'original_asset_id', 'preview_asset_id'],
     ];
 
     // Assets the admin manages, kept for as long as the shop runs: table => columns holding the asset id
-    private const TABLES_PERMANENT = [
+    private const array TABLES_PERMANENT = [
         'ben_designer_feed_item' => ['stock_asset_id', 'preview_asset_id'],
         'ben_designer_frame_finish' => ['swatch_asset_id'],
         'ben_designer_frame_profile' => ['corner_asset_id'],
@@ -58,7 +83,7 @@ class BackfillExpiryRoles implements DataPatchInterface
     ];
 
     // The other option a cart item carries an asset on, the thumbnail the mini cart shows
-    private const THUMBNAIL_OPTION_CODE = 'cart_thumbnail';
+    private const string THUMBNAIL_OPTION_CODE = 'cart_thumbnail';
 
     public function __construct(
         private readonly Gate $gate,
@@ -76,18 +101,15 @@ class BackfillExpiryRoles implements DataPatchInterface
 
     public function apply(): void
     {
-        if (!$this->gate->hasColumn('ben_asset', 'expiry_role')) {
-            return;
-        }
-
         $connection = $this->resourceConnection->getConnection();
         $table = $this->getTable('ben_asset');
 
-        // The schema step that adds the column runs in this same process, and the table description was cached
-        // before it did: without a reset the guard below would find no column and let the patch pass as applied
+        // The schema step that adds the column runs in this same process and the table description was cached
+        // before it did, so the cache goes before anything asks whether the column is there: the gate reads that
+        // same description, and a stale answer would have it report the column missing and pass as applied
         $connection->resetDdlCache($table);
 
-        if (!$connection->tableColumnExists($table, AssetInterface::EXPIRY_ROLE)) {
+        if (!$this->gate->hasColumn('ben_asset', AssetInterface::EXPIRY_ROLE)) {
             return;
         }
 
@@ -97,12 +119,21 @@ class BackfillExpiryRoles implements DataPatchInterface
             ExpiryRoleInterface::ORDER => $this->applyByReference(self::TABLES_ORDER, ExpiryRoleInterface::ORDER)
                 + $this->applyByHashes($this->getOrderHashes(), ExpiryRoleInterface::ORDER),
             ExpiryRoleInterface::CART => $this->applyByHashes($this->getCartHashes(), ExpiryRoleInterface::CART),
-            ExpiryRoleInterface::UPLOAD => $this->applyToRemainder(),
         ];
+
+        // Whatever nothing points at is asked what it is instead, which only the kinds backfill can answer, and
+        // a site whose assets were never given kinds simply has nothing to ask
+        if ($connection->tableColumnExists($table, AssetInterface::KIND)) {
+            foreach (self::KIND_ROLES as $kind => $role) {
+                $counts[$role] = ($counts[$role] ?? 0) + $this->applyByKind($kind, $role);
+            }
+        }
 
         foreach ($counts as $role => $count) {
             $this->logger->info(sprintf('Asset expiry backfill: %d rows given the %s role', $count, $role));
         }
+
+        $this->reportLeftovers();
     }
 
     public function getAliases(): array
@@ -116,6 +147,14 @@ class BackfillExpiryRoles implements DataPatchInterface
     private function applyByHashes(array $hashes, string $role): int
     {
         return $this->update($role, AssetInterface::HASH, $hashes, $this->assetExpiry->neverExpires($role));
+    }
+
+    /**
+     * Assets the kinds backfill has already named, where the kind decides the role on its own
+     */
+    private function applyByKind(string $kind, string $role): int
+    {
+        return $this->update($role, AssetInterface::KIND, [$kind], $this->assetExpiry->neverExpires($role));
     }
 
     /**
@@ -152,27 +191,6 @@ class BackfillExpiryRoles implements DataPatchInterface
         }
 
         return $this->update($role, AssetInterface::ASSET_ID, $assetIds, $this->assetExpiry->neverExpires($role));
-    }
-
-    /**
-     * Whatever nothing points at is treated as an upload and keeps the expiry it already has
-     */
-    private function applyToRemainder(): int
-    {
-        $connection = $this->resourceConnection->getConnection();
-        $select = $connection->select()
-            ->from($this->getTable('ben_asset'), [AssetInterface::ASSET_ID])
-            ->where(AssetInterface::EXPIRY_ROLE . ' IS NULL')
-            ->order(AssetInterface::ASSET_ID)
-            ->limit(self::BATCH_SIZE);
-        $updated = 0;
-
-        // Each pass takes the next batch of unassigned rows, so the loop ends when none are left
-        while ($assetIds = $connection->fetchCol($select)) {
-            $updated += $this->update(ExpiryRoleInterface::UPLOAD, AssetInterface::ASSET_ID, $assetIds, false);
-        }
-
-        return $updated;
     }
 
     /**
@@ -257,6 +275,24 @@ class BackfillExpiryRoles implements DataPatchInterface
     private function getTable(string $table): string
     {
         return $this->resourceConnection->getTableName($table);
+    }
+
+    /**
+     * How many rows nothing could say anything certain about
+     *
+     * A row with no role is never given an expiry and never swept, which is the safe end to leave it on, but it
+     * is also a row no expiry setting reaches, so the count belongs in the log where somebody will see it.
+     */
+    private function reportLeftovers(): void
+    {
+        $connection = $this->resourceConnection->getConnection();
+        $left = (int)$connection->fetchOne(
+            $connection->select()
+                ->from($this->getTable('ben_asset'), new Zend_Db_Expr('COUNT(*)'))
+                ->where(AssetInterface::EXPIRY_ROLE . ' IS NULL')
+        );
+
+        $this->logger->info(sprintf('Asset expiry backfill: %d rows left without a role', $left));
     }
 
     /**

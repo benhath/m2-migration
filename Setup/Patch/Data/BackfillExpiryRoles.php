@@ -39,7 +39,7 @@ class BackfillExpiryRoles implements DataPatchInterface
     // Everything a model drew: table => columns holding the asset id
     private const TABLES_AI = [
         'ben_ai_generation' => ['asset_id', 'thumbnail_asset_id'],
-        'ben_giftwrap_design' => ['character_sheet_asset_id', 'accent_sheet_asset_id'],
+        'ben_giftwrap_design' => ['character_sheet_asset_id'],
     ];
 
     // What the print room made and what it made it from: table => columns holding the asset id

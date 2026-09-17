@@ -81,9 +81,7 @@ class BackfillAssetKinds implements DataPatchInterface
         AssetKindInterface::OVERLAY => ['ben_giftwrap_overlay' => ['overlay_asset_id']],
         AssetKindInterface::PRINT_FILE => ['ben_product' => ['asset_id']],
         AssetKindInterface::PRINT_PREVIEW => ['ben_product' => ['preview_asset_id']],
-        AssetKindInterface::SHEET => [
-            'ben_giftwrap_design' => ['character_sheet_asset_id', 'accent_sheet_asset_id'],
-        ],
+        AssetKindInterface::SHEET => ['ben_giftwrap_design' => ['character_sheet_asset_id']],
         AssetKindInterface::UPLOAD => ['ben_product' => ['original_asset_id']],
     ];
 

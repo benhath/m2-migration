@@ -51,6 +51,9 @@
 
 ## Data and migration
 
+- `CopyGiftwrapColors` lifts every colour out of `ben_giftwrap_color` keeping the id it holds, because that id is
+  what a design's default colour names and what every order already placed recorded as the colour its message is
+  printed in. `KeyDesignsToColorCatalogue` then keys the design to `ben_color` and drops the old table.
 Everything below runs as data patches inside `setup:upgrade`, in this order. Every patch asks first whether the
 module, table or column it needs is actually there, and a no is one line in the log and nothing else — the three
 sites do not run the same modules. Every patch can be run again over a database it has already been through.

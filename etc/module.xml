@@ -11,6 +11,7 @@
             <module name="Ben_Asset"/>
             <module name="Ben_Clean"/>
             <module name="Ben_ComingSoon"/>
+            <module name="Ben_Color"/>
             <module name="Ben_Designer"/>
             <module name="Ben_DesignerGiftwrap"/>
             <module name="Ben_DesignerPhoto"/>

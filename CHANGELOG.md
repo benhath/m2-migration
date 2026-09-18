@@ -223,6 +223,7 @@ sites do not run the same modules. Every patch can be run again over a database 
   in, because Magento refuses DDL inside one and the table drop also waited forever on a lock the same transaction
   held. `CopyGiftwrapFonts` copies `is_active` only where the old table has it; a 2.x site does not, and the new
   table's default stands in.
+- `PurgeUnplacedResizedAssets`: the resized copies under `asset/resized` that the kind backfill could give no kind - copies nothing points at any more - are deleted, files and rows, once the backfill's second pass has run. Each can be made again from its original the moment anything asks. Dev: 1,073 rows, 130 MB.
 
 ## Removed
 

@@ -32,13 +32,13 @@ class KeyPersonalDesigns implements DataPatchInterface
     }
 
     /**
-     * The designs this keys are the ones typed ai, and there are two patches that produce that type: the general
-     * rename and the one that brings the old `art` designs across. Both are named, or on a live database every
-     * art design would still be typed art when this read the table and would go out unkeyed and public
+     * The designs this keys are the ones typed ai, so the rename that produces that type is named: without it
+     * every generated design would still be typed generated when this read the table and would go out unkeyed
+     * and public
      */
     public static function getDependencies(): array
     {
-        return [RenameArtDesignsToAi::class, RenameDesignTypes::class];
+        return [RenameDesignTypes::class];
     }
 
     /**

@@ -11,8 +11,6 @@
   in Pincher-Brothers rather than in nothing.
 - Every font's sample picture is drawn from the font file itself, so a sample can never be of a different
   typeface from the font beside it. Two font names that read wrongly were put right.
-- The AI tool is headed after the artwork it draws, instead of "Your Portrait", which asked the wrong thing on a
-  banner or a poster.
 - A shop that promised free delivery over a certain order value keeps promising it over that value: the number
   was carried onto Magento's own free delivery carrier before the old copies were dropped.
 - A shop already running the priority access gate keeps the word it was using; the password is a setting now
@@ -36,7 +34,7 @@
 - The face service log and the two tables of AI notes about an upload were folded into the AI log, so a scan is
   one row and a note is in one place.
 - Settings that were the same number on every product became shop settings, set once: the designer's endpoints,
-  the gallery's upload ceilings and endpoint, the prompt length and redraw limits, and the sticker blade offset.
+  the gallery's upload ceilings and endpoint, and the prompt length and redraw limits.
 - Tooltips on individual option rows — a frame finish, a mount size, a roll length — were stripped; a tooltip
   belongs on the tool's own heading.
 - The Gallery tool's accepted file types are chosen from the shop's format list rather than typed in as media
@@ -61,15 +59,14 @@ sites do not run the same modules. Every patch can be run again over a database 
 1. The shop's own processing statuses are made visible on the storefront.
 2. Design types are renamed: tile became original, face became photo, generated became ai. The type column became
    NOT NULL in this release, so a design that had no type at all is given the type it has always behaved as.
-3. A design type briefly called art during 3.0 development becomes ai. Live sites never had it.
-4. Every art design already on the shop is marked personal and given a key. The catalogue's own Create Your Own
+3. Every art design already on the shop is marked personal and given a key. The catalogue's own Create Your Own
    paper carries no description, so it is left unkeyed.
-5. A product carrying giftwrap tools that predates designer types is set to the giftwrap type; a product with
+4. A product carrying giftwrap tools that predates designer types is set to the giftwrap type; a product with
    designer tools and no tool belonging to another type is set to the photo type.
-6. The admin tool configuration's source classes are renamed to their new home.
-7. The Gallery tool's saved media types become format names; a media type the format registry does not know is
+5. The admin tool configuration's source classes are renamed to their new home.
+6. The Gallery tool's saved media types become format names; a media type the format registry does not know is
    dropped, which falls back to the upload profile's own ceiling.
-8. Every giftwrap order item the old checkout took is rewritten into the shape the designer writes:
+7. Every giftwrap order item the old checkout took is rewritten into the shape the designer writes:
    `designer_active_data` and `designer_type`, with the original options kept beside them under
    `giftwrap_legacy`. The roll length is named by the hash of the configured row of that length; items sold at a
    length the picker no longer offers carry the length alone and the print room prints what the order says. An
@@ -78,22 +75,22 @@ sites do not run the same modules. Every patch can be run again over a database 
 
 **Fonts**
 
-9. The font catalogue is copied out of `ben_giftwrap_font` into `ben_font`, each row keeping the id it holds,
+8. The font catalogue is copied out of `ben_giftwrap_font` into `ben_font`, each row keeping the id it holds,
     because a design's default font, the store font setting and the art range's typography setting all name it.
-10. The fonts the designer used to hide with a hard coded list are switched off with the new Enabled flag.
-11. The range is cut to the twenty fonts orders name. The patch only runs when the table is recognisably that
+9. The fonts the designer used to hide with a hard coded list are switched off with the new Enabled flag.
+10. The range is cut to the twenty fonts orders name. The patch only runs when the table is recognisably that
     list — at least fifteen of the twenty present under their own name — so a shop that built its own range is
     left alone with a warning.
-12. Designs still naming a font that went are moved to Pincher-Brothers. A store font setting pointing at a font
+11. Designs still naming a font that went are moved to Pincher-Brothers. A store font setting pointing at a font
     that went is reported rather than moved.
-13. Designs are keyed to the font catalogue: the foreign key is added by hand, under the name declarative schema
+12. Designs are keyed to the font catalogue: the foreign key is added by hand, under the name declarative schema
     would have generated, and `ben_giftwrap_font` is dropped once its rows are known to be in the catalogue. The
     key could not be declared in `db_schema.xml` because `ben_font` is still empty when the schema step runs.
-14. Every font in the catalogue is given a drawn sample and its uploaded SVG is removed.
+13. Every font in the catalogue is given a drawn sample and its uploaded SVG is removed.
 
 **Design categories**
 
-15. `ben_giftwrap_design_category` has duplicate design/category pairs removed, keeping the lowest id of each and
+14. `ben_giftwrap_design_category` has duplicate design/category pairs removed, keeping the lowest id of each and
     naming what went in the log, and then gets its unique key added by hand under the name declarative schema
     would have generated. The declaration is out of `Ben_Giftwrap/etc/db_schema.xml` for 3.0 only, because one
     duplicate pair on a live database would abort `setup:upgrade` with the schema half applied. It goes back in
@@ -102,79 +99,78 @@ sites do not run the same modules. Every patch can be run again over a database 
 
 **Assets**
 
-16. The saved expiry numbers are carried over to the one number per role the group has now; where two old fields
+15. The saved expiry numbers are carried over to the one number per role the group has now; where two old fields
     fed one role the larger of the two wins, and the old rows are deleted.
-17. Every asset already in the table is given the role it would be created with today, working from the strongest
+16. Every asset already in the table is given the role it would be created with today, working from the strongest
     role down. Roles that never expire have their expiry cleared. A row nothing points at, and whose kind says
     nothing certain, keeps no role rather than a guess.
-18. Every asset is given the kind whatever made it would name today, worked out from what points at the row
+17. Every asset is given the kind whatever made it would name today, worked out from what points at the row
     first and the directory it was written into second. What still cannot be placed is left empty rather than
     guessed at, and counted in the log.
-19. Both asset backfills are run once more under a new name, because they were first applied while the table
+18. Both asset backfills are run once more under a new name, because they were first applied while the table
     held a handful of rows and a live import afterwards brought in twelve thousand made before the kind and role
     columns existed. Both only touch rows with nothing in the column yet, so a coloured table is untouched.
 
 **Logs**
 
-20. Rows written by the face service are renamed from the old provider name to Face V2.
-21. `ben_giftwrap_face_log` is folded into `ben_ai_generation` and dropped. A face log row is matched to its
+19. Rows written by the face service are renamed from the old provider name to Face V2.
+20. `ben_giftwrap_face_log` is folded into `ben_ai_generation` and dropped. A face log row is matched to its
     generation by the photograph — reached through the normalised copy that was actually sent — with the kinds
     agreeing, within five minutes, each generation claimed once; a row that matches nothing is inserted as a
     generation of its own. The two keep-warm flags go with it.
-22. `ben_designer_asset_quality` and `ben_giftwrap_face_summary` are folded into `ben_ai_asset_note` and dropped,
+21. `ben_designer_asset_quality` and `ben_giftwrap_face_summary` are folded into `ben_ai_asset_note` and dropped,
     with each note's generation hash resolved to the generation's own id as a foreign key on the way across. A
     note whose generation has since been deleted comes over without one.
 
 **Print and admin**
 
-23. Products marked printed with no print date are moved onto the regeneration flag.
-24. Saved order-product grid layouts have the two renamed print columns rewritten, as column keys, as the sorted
+22. Products marked printed with no print date are moved onto the regeneration flag.
+23. Saved order-product grid layouts have the two renamed print columns rewritten, as column keys, as the sorted
     field and as filter keys.
-25. The Designer attribute group is sorted directly under General in every attribute set and every designer
+24. The Designer attribute group is sorted directly under General in every attribute set and every designer
     attribute placed in it.
-26. Tool option schemas that still say "varchar" are rewritten to say "string".
-27. Row-level tooltips are stripped from every dynamic-row option schema and from the rows saved against a
+25. Tool option schemas that still say "varchar" are rewritten to say "string".
+26. Row-level tooltips are stripped from every dynamic-row option schema and from the rows saved against a
     product.
 
 **Settings moved**
 
-28. Device Enabled becomes the print workflow setting, at every scope that had its own answer.
-29. The Gallery group's upload endpoint moves to the Endpoints group; Allow Multiple Uploads is dropped, since a
+27. Device Enabled becomes the print workflow setting, at every scope that had its own answer.
+28. The Gallery group's upload endpoint moves to the Endpoints group; Allow Multiple Uploads is dropped, since a
     design is one photo.
-30. Designer > Quality settings become the points scoring's Score, Detection, Bands and Messages fields; a
+29. Designer > Quality settings become the points scoring's Score, Detection, Bands and Messages fields; a
     penalty carries over as the negative number it always was.
-31. The face service settings move to AI > Face V2. The API key is deleted — nothing sends one, the service is
+30. The face service settings move to AI > Face V2. The API key is deleted — nothing sends one, the service is
     only reached over the internal network — and so is the queue wait, which is the service's own setting now.
-32. Royal Mail's settings move from `shipping_api/royal_mail` to `shipping_api/carrier_rm`, and the client secret
+31. Royal Mail's settings move from `shipping_api/royal_mail` to `shipping_api/carrier_rm`, and the client secret
     is encrypted on the way over.
-33. The giftwrap and promotion copies of the free delivery threshold, and the GiftwrapSize tool's copy of it, are
+32. The giftwrap and promotion copies of the free delivery threshold, and the GiftwrapSize tool's copy of it, are
     carried onto Magento's free shipping carrier and then dropped. A number already saved on the carrier is the
     admin's later decision and always wins. **The carrier's own on/off flag is left alone** — see the pre-upgrade
     list.
-34. The priority access password a shop was already using is written into its new setting, after Ben_ComingSoon
+33. The priority access password a shop was already using is written into its new setting, after Ben_ComingSoon
     has moved across anything the shop had saved under the old path, so an admin's own word always wins.
-35. The footer's copyright holder moves to a field of its own and the year is printed from the clock. The retired
+34. The footer's copyright holder moves to a field of its own and the year is printed from the clock. The retired
     Trustwave URL rows go at the same time.
 
 **Settings dropped, nothing carried over**
 
-36. The three fixed delivery sentences, the print strip promotion's four settings (the strip prints a scan link
+35. The three fixed delivery sentences, the print strip promotion's four settings (the strip prints a scan link
     now), the offshore postcode lists at every scope for every carrier (only DPD ever refused a postcode of its
-    own and it left with 3.0), the prompt length and redraw limits every product carried, the sticker blade
-    offset every sticker product carried, the designer endpoints and the older Quality tool's thresholds and
+    own and it left with 3.0), the prompt length and redraw limits every product carried, the designer endpoints and the older Quality tool's thresholds and
     wording, the gallery options that became shop settings, saved feed wording that still spelled out roll
     lengths and paper width by hand, and the QualityScore tool from the products it was tried out on.
 
 **Last, and unattended**
 
-37. Redundant configuration is purged: settings 3.0 does not read, settings of modules that are no longer
+36. Redundant configuration is purged: settings 3.0 does not read, settings of modules that are no longer
     installed, and settings saved at their own default. It waits for every patch above that still has a path to
     carry. The whole list is written to the log before a single row is deleted. Paths under `payment/`,
     `carriers/` and `web/secure/` are pinned and never removed whatever the audit says — a payment or carrier
     setting removed in the release window is a shop that stops taking money, and a secure base URL removed is a
     shop served over plain HTTP. Those are reported for a person to deal with. The value is never logged, only
     the path and scope.
-38. The tables and `setup_module` rows left behind by Amazon, Dotdigital, Klarna, Vertex, Yotpo and a handful of
+37. The tables and `setup_module` rows left behind by Amazon, Dotdigital, Klarna, Vertex, Yotpo and a handful of
     Magento modules are dropped, having been dumped first. If the dump directory cannot be written to, nothing is
     dropped at all and the upgrade carries on. Only table names and row counts are logged, never contents.
 
@@ -238,6 +234,10 @@ sites do not run the same modules. Every patch can be run again over a database 
 - Installing the giftwrap designer on a store that has the product and none of the tools is a fresh-install seed
   rather than a conversion of 2.x data, so it moved to Ben_DesignerGiftwrap, which owns those tools, and runs
   ahead of everything here. It names its old class, so a store that has already run it does not run it again.
+- Four patches that only ever tidied up data made during 3.0 development are gone: the design type briefly
+  called art, the AI tool's first heading, the sticker blade offset option, and the hash backfill in Ben_Ai.
+  None of the three live sites can hold the data they looked for - the tables and tools they name were all
+  written for 3.0 - so they would have run over nothing.
 - Every one-off 2.10 to 3.0 migration lives in this one module, so the modules that own the tables are left
   holding only the code a running shop needs. **The module is temporary** and is deleted once giftwrap.co.uk,
   pics2posters.co.uk and festive have all run 3.0 and their numbers have been checked. Nothing may depend on it.

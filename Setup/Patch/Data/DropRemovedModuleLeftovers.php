@@ -7,6 +7,7 @@ use Ben\Clean\Model\LeftoverRemoval;
 use Ben\Clean\Model\ModuleRemoval;
 use Ben\Migration\Model\Gate;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Exception\FileSystemException;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Framework\Setup\Patch\NonTransactionableInterface;
@@ -58,6 +59,9 @@ class DropRemovedModuleLeftovers implements DataPatchInterface, NonTransactionab
         return [PurgeRedundantConfig::class];
     }
 
+    /**
+     * @throws FileSystemException
+     */
     public function apply(): void
     {
         if (!$this->gate->hasModule('Ben_Clean')) {
@@ -128,6 +132,8 @@ class DropRemovedModuleLeftovers implements DataPatchInterface, NonTransactionab
     /**
      * Why the dumps cannot be written, or an empty string when they can. The directory is written into for real
      * rather than asked about, because a directory that exists is not the same as one this process may write to
+     *
+     * @throws FileSystemException
      */
     private function getDumpDirectoryRefusal(): string
     {

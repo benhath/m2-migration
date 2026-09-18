@@ -266,6 +266,8 @@ sites do not run the same modules. Every patch can be run again over a database 
 
 ## Under the hood
 
+- The leftovers patch declares the filesystem exception it can raise, and the asset purge's methods are in the
+  house order.
 - Finding a designer tool's options by component and taking them away, with every product's answer for them, is
   one class (`Model/ToolOptions`) rather than the same four private methods copied into four patches.
 - `RenameSourceClasses` is gone: the only thing it rewrote was the colour and font tool's source class name, and

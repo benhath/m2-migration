@@ -83,6 +83,22 @@ class PurgeMadeAssets implements DataPatchInterface
     }
 
     /**
+     * @return int[]
+     */
+    private function getUnplacedIds(): array
+    {
+        $collection = $this->assetCollectionFactory->create();
+        $collection->addFieldToFilter(AssetInterface::KIND, ['null' => true]);
+        // Either column on its own is enough: a resized copy whatever its date, or anything with no date at all
+        $collection->addFieldToFilter(
+            [AssetInterface::FILE_PATH, AssetInterface::EXPIRES_AT],
+            [['like' => self::RESIZED_PATH_PREFIX . '%'], ['null' => true]],
+        );
+        $collection->setPageSize(self::BATCH_SIZE);
+
+        return array_map('intval', $collection->getAllIds());
+    }
+    /**
      * @return array{deleted: int, failed: int, sizeKb: int}
      */
     private function purgeUnplaced(): array
@@ -120,22 +136,5 @@ class PurgeMadeAssets implements DataPatchInterface
         }
 
         return ['deleted' => $deleted, 'failed' => $failed, 'sizeKb' => $sizeKb];
-    }
-
-    /**
-     * @return int[]
-     */
-    private function getUnplacedIds(): array
-    {
-        $collection = $this->assetCollectionFactory->create();
-        $collection->addFieldToFilter(AssetInterface::KIND, ['null' => true]);
-        // Either column on its own is enough: a resized copy whatever its date, or anything with no date at all
-        $collection->addFieldToFilter(
-            [AssetInterface::FILE_PATH, AssetInterface::EXPIRES_AT],
-            [['like' => self::RESIZED_PATH_PREFIX . '%'], ['null' => true]],
-        );
-        $collection->setPageSize(self::BATCH_SIZE);
-
-        return array_map('intval', $collection->getAllIds());
     }
 }

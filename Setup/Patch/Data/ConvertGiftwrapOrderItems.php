@@ -12,6 +12,7 @@ use Ben\DesignerGiftwrap\Api\ActiveProductData\GiftwrapFaceInterface;
 use Ben\DesignerGiftwrap\Api\ActiveProductData\GiftwrapFontInterface;
 use Ben\DesignerGiftwrap\Api\ActiveProductData\GiftwrapSizeInterface;
 use Ben\DesignerGiftwrap\Api\ActiveProductData\GiftwrapTextInterface;
+use Ben\DesignerGiftwrap\Setup\Patch\Data\InstallGiftwrapDesigner;
 use Ben\Giftwrap\Api\Data\DesignInterface;
 use Ben\Migration\Model\Gate;
 use Exception;

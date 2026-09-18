@@ -11,6 +11,7 @@ use Ben\Designer\Model\ResourceModel\ProductToolOption\CollectionFactory as Prod
 use Ben\Designer\Model\ResourceModel\ToolOption as ToolOptionResource;
 use Ben\Designer\Model\ResourceModel\ToolOption\CollectionFactory as ToolOptionCollectionFactory;
 use Ben\Designer\Model\ToolOption;
+use Ben\DesignerGiftwrap\Setup\Patch\Data\InstallGiftwrapDesigner;
 use Ben\Migration\Model\Gate;
 use Ben\Utils\Model\JsonValidator;
 use Exception;

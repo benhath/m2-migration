@@ -108,9 +108,12 @@ sites do not run the same modules. Every patch can be run again over a database 
 17. Every asset is given the kind whatever made it would name today, worked out from what points at the row
     first and the directory it was written into second. What still cannot be placed is left empty rather than
     guessed at, and counted in the log.
-18. Both asset backfills are run once more under a new name, because they were first applied while the table
-    held a handful of rows and a live import afterwards brought in twelve thousand made before the kind and role
-    columns existed. Both only touch rows with nothing in the column yet, so a coloured table is untouched.
+18. Both asset backfills are run once more, in the other order, kinds first. This is the pass that gives an
+    asset nothing points at the role its kind settles: roles are backfilled before kinds are, so on the first
+    pass every kind is still empty and only the assets something points at come out with a role. It also
+    catches a table that arrives after the patches did - both first ran while ben_asset held a handful of rows
+    and a live import afterwards brought in twelve thousand made before the kind and role columns existed.
+    Both only touch rows with nothing in the column yet, so a coloured table is untouched.
 
 **Logs**
 

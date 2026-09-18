@@ -3,6 +3,8 @@
 Every one-off 2.10 → 3.0 data migration, in one place, so the modules that own the tables are left holding only
 the code a running shop needs.
 
+What each patch does, in the order they run: [PATCHES.md](PATCHES.md).
+
 ## Features
 
 - One `Setup/Patch/Data` class per migration, each keeping the class basename it had in the module it came from

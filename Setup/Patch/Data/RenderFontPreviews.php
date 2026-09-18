@@ -58,7 +58,8 @@ class RenderFontPreviews implements DataPatchInterface
      */
     public static function getDependencies(): array
     {
-        return [KeepTopTwentyFonts::class];
+        // After the purge, so the previews rendered here are not the next thing it takes
+        return [KeepTopTwentyFonts::class, PurgeMadeAssets::class];
     }
 
     public function apply(): void

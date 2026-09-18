@@ -266,6 +266,10 @@ sites do not run the same modules. Every patch can be run again over a database 
 
 ## Under the hood
 
+- Finding a designer tool's options by component and taking them away, with every product's answer for them, is
+  one class (`Model/ToolOptions`) rather than the same four private methods copied into four patches.
+- `RenameSourceClasses` is gone: the only thing it rewrote was the colour and font tool's source class name, and
+  `KeyToolOptionsToCatalogues` deletes those answers outright, so the rename never reached 3.0.
 - Installing the giftwrap designer on a store that has the product and none of the tools is a fresh-install seed
   rather than a conversion of 2.x data, so it moved to Ben_DesignerGiftwrap, which owns those tools, and runs
   ahead of everything here. It names its old class, so a store that has already run it does not run it again.

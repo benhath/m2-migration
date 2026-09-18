@@ -3,15 +3,8 @@ declare(strict_types=1);
 
 namespace Ben\Migration\Setup\Patch\Data;
 
-use Ben\Designer\Api\Data\ProductToolOptionInterface;
-use Ben\Designer\Api\Data\ToolInterface;
-use Ben\Designer\Api\Data\ToolOptionInterface;
-use Ben\Designer\Model\ResourceModel\ProductToolOption\CollectionFactory as ProductToolOptionCollectionFactory;
-use Ben\Designer\Model\ResourceModel\Tool\CollectionFactory as ToolCollectionFactory;
-use Ben\Designer\Model\ResourceModel\ToolOption as ToolOptionResource;
-use Ben\Designer\Model\ResourceModel\ToolOption\CollectionFactory as ToolOptionCollectionFactory;
-use Ben\Designer\Model\ToolOption;
 use Ben\Migration\Model\Gate;
+use Ben\Migration\Model\ToolOptions;
 use Exception;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
@@ -50,10 +43,7 @@ class RemoveGlobalDesignerToolOptions implements DataPatchInterface
     public function __construct(
         private readonly Gate $gate,
         private readonly ModuleDataSetupInterface $moduleDataSetup,
-        private readonly ProductToolOptionCollectionFactory $productToolOptionCollectionFactory,
-        private readonly ToolCollectionFactory $toolCollectionFactory,
-        private readonly ToolOptionCollectionFactory $toolOptionCollectionFactory,
-        private readonly ToolOptionResource $toolOptionResource,
+        private readonly ToolOptions $toolOptions,
     ) {
     }
 
@@ -74,21 +64,7 @@ class RemoveGlobalDesignerToolOptions implements DataPatchInterface
         $this->moduleDataSetup->startSetup();
 
         foreach (self::OPTION_NAMES_BY_COMPONENT as $component => $optionNames) {
-            $toolIds = $this->getToolIds($component);
-
-            if (!$toolIds) {
-                continue;
-            }
-
-            $toolOptions = $this->getToolOptions($toolIds, $optionNames);
-            $toolOptionIds = array_keys($toolOptions);
-
-            if (!$toolOptionIds) {
-                continue;
-            }
-
-            $this->removeProductToolOptions($toolOptionIds);
-            $this->removeToolOptions($toolOptions);
+            $this->toolOptions->remove($this->toolOptions->find($component, $optionNames));
         }
 
         $this->moduleDataSetup->endSetup();
@@ -97,46 +73,5 @@ class RemoveGlobalDesignerToolOptions implements DataPatchInterface
     public function getAliases(): array
     {
         return ['Ben\Designer\Setup\Patch\Data\RemoveGlobalDesignerToolOptions'];
-    }
-
-    /**
-     * A store may have more than one tool on the same component, so every one of them is cleaned
-     */
-    private function getToolIds(string $component): array
-    {
-        $toolCollection = $this->toolCollectionFactory->create();
-        $toolCollection->addFieldToFilter(ToolInterface::COMPONENT, $component);
-
-        return array_map('intval', $toolCollection->getAllIds());
-    }
-
-    /**
-     * @return ToolOption[] keyed by tool option id
-     */
-    private function getToolOptions(array $toolIds, array $optionNames): array
-    {
-        $toolOptionCollection = $this->toolOptionCollectionFactory->create();
-        $toolOptionCollection->addFieldToFilter(ToolOptionInterface::TOOL_ID, ['in' => $toolIds]);
-        $toolOptionCollection->addFieldToFilter(ToolOptionInterface::NAME, ['in' => $optionNames]);
-
-        return $toolOptionCollection->getItems();
-    }
-
-    private function removeProductToolOptions(array $toolOptionIds): void
-    {
-        $productToolOptionCollection = $this->productToolOptionCollectionFactory->create();
-        $productToolOptionCollection->addFieldToFilter(ProductToolOptionInterface::TOOL_OPTION_ID, ['in' => $toolOptionIds]);
-        $productToolOptionCollection->walk('delete');
-    }
-
-    /**
-     * @param ToolOption[] $toolOptions
-     * @throws Exception
-     */
-    private function removeToolOptions(array $toolOptions): void
-    {
-        foreach ($toolOptions as $toolOption) {
-            $this->toolOptionResource->delete($toolOption);
-        }
     }
 }

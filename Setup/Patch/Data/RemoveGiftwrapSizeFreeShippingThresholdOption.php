@@ -4,15 +4,10 @@ declare(strict_types=1);
 namespace Ben\Migration\Setup\Patch\Data;
 
 use Ben\Designer\Api\Data\ProductToolOptionInterface;
-use Ben\Designer\Api\Data\ToolInterface;
-use Ben\Designer\Api\Data\ToolOptionInterface;
 use Ben\Designer\Model\ProductToolOption;
 use Ben\Designer\Model\ResourceModel\ProductToolOption\CollectionFactory as ProductToolOptionCollectionFactory;
-use Ben\Designer\Model\ResourceModel\Tool\CollectionFactory as ToolCollectionFactory;
-use Ben\Designer\Model\ResourceModel\ToolOption as ToolOptionResource;
-use Ben\Designer\Model\ResourceModel\ToolOption\CollectionFactory as ToolOptionCollectionFactory;
-use Ben\Designer\Model\ToolOption;
 use Ben\Migration\Model\Gate;
+use Ben\Migration\Model\ToolOptions;
 use Exception;
 use Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory as ConfigDataCollectionFactory;
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -45,9 +40,7 @@ class RemoveGiftwrapSizeFreeShippingThresholdOption implements DataPatchInterfac
         private readonly ModuleDataSetupInterface $moduleDataSetup,
         private readonly ConfigDataCollectionFactory $configDataCollectionFactory,
         private readonly ProductToolOptionCollectionFactory $productToolOptionCollectionFactory,
-        private readonly ToolCollectionFactory $toolCollectionFactory,
-        private readonly ToolOptionCollectionFactory $toolOptionCollectionFactory,
-        private readonly ToolOptionResource $toolOptionResource,
+        private readonly ToolOptions $toolOptions,
         private readonly WriterInterface $configWriter,
     ) {
     }
@@ -68,17 +61,11 @@ class RemoveGiftwrapSizeFreeShippingThresholdOption implements DataPatchInterfac
 
         $this->moduleDataSetup->startSetup();
 
-        $toolIds = $this->getSizeToolIds();
+        $toolOptions = $this->toolOptions->find(self::TOOL_COMPONENT, [self::OPTION_NAME]);
 
-        if ($toolIds) {
-            $toolOptions = $this->getToolOptions($toolIds);
-            $toolOptionIds = array_keys($toolOptions);
-
-            if ($toolOptionIds) {
-                $this->migrateThreshold($toolOptionIds);
-                $this->removeProductToolOptions($toolOptionIds);
-                $this->removeToolOptions($toolOptions);
-            }
+        if ($toolOptions) {
+            $this->migrateThreshold(array_keys($toolOptions));
+            $this->toolOptions->remove($toolOptions);
         }
 
         $this->moduleDataSetup->endSetup();
@@ -118,29 +105,6 @@ class RemoveGiftwrapSizeFreeShippingThresholdOption implements DataPatchInterfac
     }
 
     /**
-     * A store may run more than one tool on the size component, so every one of them is cleaned
-     */
-    private function getSizeToolIds(): array
-    {
-        $toolCollection = $this->toolCollectionFactory->create();
-        $toolCollection->addFieldToFilter(ToolInterface::COMPONENT, self::TOOL_COMPONENT);
-
-        return array_map('intval', $toolCollection->getAllIds());
-    }
-
-    /**
-     * @return ToolOption[] keyed by tool option id
-     */
-    private function getToolOptions(array $toolIds): array
-    {
-        $toolOptionCollection = $this->toolOptionCollectionFactory->create();
-        $toolOptionCollection->addFieldToFilter(ToolOptionInterface::TOOL_ID, ['in' => $toolIds]);
-        $toolOptionCollection->addFieldToFilter(ToolOptionInterface::NAME, self::OPTION_NAME);
-
-        return $toolOptionCollection->getItems();
-    }
-
-    /**
      * Writes the number the products carried to the carrier, so a shop that promised free delivery over it
      * keeps promising it. The most common value wins where products disagree; a carrier that already holds
      * one is left as it is
@@ -176,23 +140,5 @@ class RemoveGiftwrapSizeFreeShippingThresholdOption implements DataPatchInterfac
             ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
             0,
         );
-    }
-
-    private function removeProductToolOptions(array $toolOptionIds): void
-    {
-        $productToolOptionCollection = $this->productToolOptionCollectionFactory->create();
-        $productToolOptionCollection->addFieldToFilter(ProductToolOptionInterface::TOOL_OPTION_ID, ['in' => $toolOptionIds]);
-        $productToolOptionCollection->walk('delete');
-    }
-
-    /**
-     * @param ToolOption[] $toolOptions
-     * @throws Exception
-     */
-    private function removeToolOptions(array $toolOptions): void
-    {
-        foreach ($toolOptions as $toolOption) {
-            $this->toolOptionResource->delete($toolOption);
-        }
     }
 }

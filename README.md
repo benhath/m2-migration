@@ -103,9 +103,13 @@ alone, which is why `OrderProductPopulator` prints the length the order says whe
 the hash. Old cart items are deliberately not converted: a cart is priced again on every load and the old
 checkout's add-to-cart is already gone, so an old line in a basket at cutover is one to clear rather than carry.
 
-`SetPromotionPasswordSecret` is the one patch here with no earlier life in another module: the priority access
-password became a configuration field, and a shop already using the gate needs the word it was using written
-into the field once or it turns everyone away. It writes `coming_soon/password/secret`, which is where the
-field lives now, and depends on `Ben\ComingSoon\Setup\Patch\Data\CopyPromotionPassword` so that a shop which
-had saved its own word under the old Promotion path keeps it and only an empty field is filled in. That is why
+`SetPromotionPasswordSecret` carries the whole priority access group over: the switch, the two messages and the
+password became configuration fields under Coming Soon, and a shop already using the gate needs what it was
+using written into them once or it turns everyone away. It reads the old `promotion/password/*` rows in every
+scope they were set in and writes `coming_soon/password/*`, the password as the ciphertext it already is, and
+only where nothing has been typed there already, so an admin's own answer always wins. A shop with nothing to
+carry over is given a random password and told so in the log; the word itself is never logged and is never a
+literal here, because a password in the repository is no password at all. It used to be two patches, the copy
+in Ben_ComingSoon and the fallback here; the removed class is named in `getAliases()`. `PurgeRedundantConfig`
+names this patch, which is what keeps the old rows in place until they have been read. That is why
 `Ben_ComingSoon` is in this module's sequence. It is a one-off like the rest and goes when the module does.

@@ -14,7 +14,8 @@
 - A shop that promised free delivery over a certain order value keeps promising it over that value: the number
   was carried onto Magento's own free delivery carrier before the old copies were dropped.
 - A shop already running the priority access gate keeps the word it was using; the password is a setting now
-  rather than something only a deploy could change.
+  rather than something only a deploy could change. A shop that had no word saved is given a random one, which
+  is read and replaced at Priority Access, rather than a word anybody could read in the code.
 - The footer's first legal line prints the current year from the clock instead of a year that was typed in and
   went stale every January.
 
@@ -148,8 +149,11 @@ sites do not run the same modules. Every patch can be run again over a database 
     carried onto Magento's free shipping carrier and then dropped. A number already saved on the carrier is the
     admin's later decision and always wins. **The carrier's own on/off flag is left alone** — see the pre-upgrade
     list.
-33. The priority access password a shop was already using is written into its new setting, after Ben_ComingSoon
-    has moved across anything the shop had saved under the old path, so an admin's own word always wins.
+33. The priority access settings a shop was already using - the switch, the two messages and the password, which
+    travels as the ciphertext it already is - are copied from the old Promotion path into the Coming Soon
+    section, in every scope they were set in, and only where nothing has been typed there already. A shop with
+    nothing to carry over is given a random password and told so in the log, never in the repository, and it is
+    read and replaced at Priority Access.
 34. The footer's copyright holder moves to a field of its own and the year is printed from the clock. The retired
     Trustwave URL rows go at the same time.
 

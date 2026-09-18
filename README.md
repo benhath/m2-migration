@@ -17,9 +17,9 @@ the code a running shop needs.
 ## Requirements
 
 - Magento 2.4.9, PHP 8.4
-- Depends on every module whose tables or config it touches: Ben_Ai, Ben_Asset, Ben_Designer,
-  Ben_DesignerGiftwrap, Ben_DesignerPhoto, Ben_Font, Ben_Footer, Ben_Giftwrap, Ben_OrderFlow, Ben_Product,
-  Ben_Promotion, Ben_Shipping
+- Depends on every module whose tables or config it touches: Ben_Ai, Ben_Asset, Ben_Clean, Ben_Color,
+  Ben_ComingSoon, Ben_Designer, Ben_DesignerGiftwrap, Ben_DesignerPhoto, Ben_Font, Ben_Footer, Ben_Giftwrap,
+  Ben_OrderFlow, Ben_Product, Ben_Promotion, Ben_Shipping, Ben_Utils
 
 ## Installation
 
@@ -72,9 +72,25 @@ after 3.0 and finds its key already standing. The NOT NULL columns and the two f
 still declared and still run before any patch, so the orphan and NULL checks in the launch audit are run against
 each live database immediately before the deploy.
 
-`PurgeRedundantConfig` and `DropRemovedModuleLeftovers` are the two patches here that remove something nobody
-asked them to, unattended, inside `setup:upgrade` on a live database. Both write the whole list of what they are
-about to do to the log before they do any of it, because a row or a table removed unattended has no other record.
+`CopyGiftwrapColors` and `KeyDesignsToColorCatalogue` are the colour pair, and work the way the font pair does:
+the rows come out of `ben_giftwrap_color` into `ben_color` keeping the id each holds, because that id is what a
+design's default colour names and what every giftwrap order already placed recorded as the colour its message is
+printed in. The key onto the catalogue is added by hand under the name declarative schema would have generated,
+because `ben_color` is still empty when the schema step runs, and the old table is dropped only once the
+catalogue is holding at least as many rows as it is. Nothing else manages colours now: giftwrap's own colour
+screen is gone and Ben_Color owns the range.
+
+`PurgeMadeAssets` takes away every file the shop made for itself on the way to 3.0 — previews, tiles at a size,
+thumbnails, feed pictures, font previews, downloads — files and rows. Given files stay: an upload, a design's
+tile, a font, a picture a model drew, a face the face service cut, a print file. Nothing here can be made again,
+everything taken can, and the deploy runs the design preview and feed regeneration straight after so no customer
+waits for one. It runs after the second asset backfill pass and before the font samples are drawn, so nothing
+the upgrade itself made is taken.
+
+`PurgeRedundantConfig` and `DropRemovedModuleLeftovers` are the two patches here that take away something no
+later run can put back, unattended, inside `setup:upgrade` on a live database. Both write the whole list of what
+they are about to do to the log before they do any of it, because a row or a table removed unattended has no
+other record.
 The purge never touches a path under `payment/`, `carriers/` or `web/secure/` whatever the audit says about it:
 a payment or carrier setting removed in the release window is a shop that stops taking money and a secure base
 URL removed is a shop served over plain HTTP, and those are worth more than a tidy `core_config_data`. Pinned

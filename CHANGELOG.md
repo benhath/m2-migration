@@ -51,6 +51,9 @@
 
 ## Data and migration
 
+- `AddPlainTextColors` puts black and white in the colour catalogue, unless a shade of either is already there.
+- `KeyToolOptionsToCatalogues` takes the class name off every colour and font tool and keys the option to the
+  catalogue instead, clearing the old answers so each range's package writes what its products offer.
 - `CopyGiftwrapColors` lifts every colour out of `ben_giftwrap_color` keeping the id it holds, because that id is
   what a design's default colour names and what every order already placed recorded as the colour its message is
   printed in. `KeyDesignsToColorCatalogue` then keys the design to `ben_color` and drops the old table.

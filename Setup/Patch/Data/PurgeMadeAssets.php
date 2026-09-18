@@ -25,14 +25,21 @@ use Throwable;
  * of them than with a store room nobody has sorted. A print file is given, so it stays and keeps its own expiry;
  * nothing is sent to the printer until the upgrade is done.
  *
- * The same purge the admin page offers, over every kind the registry lets it take, and after it the rows the kind
- * backfill could give no kind: those are copies nothing points at, or they would have been named by what pointed
- * at them. Runs after the backfill's second pass and before the font previews are rendered, so nothing made by
- * the upgrade itself is taken. A second run finds nothing.
+ * The same purge the admin page offers, over every kind the registry lets it take, and after it the resized
+ * copies the kind backfill could give no kind: a resized copy is made by definition, and one nothing points at
+ * would otherwise sit on the disk for good, since the purge page cannot see a row with no kind. Any other row
+ * with no kind is left exactly where it is: not knowing what a file is is no reason to call it made, and on a
+ * shop this was not written against it could be a customer's own upload. The backfill names those directories
+ * in the log for a person to look at.
+ *
+ * Runs after the backfill's second pass and before the font previews are rendered, so nothing made by the
+ * upgrade itself is taken. A second run finds nothing.
  */
 class PurgeMadeAssets implements DataPatchInterface
 {
     private const int BATCH_SIZE = 500;
+
+    private const string RESIZED_PATH_PREFIX = 'asset/resized/';
 
     public function __construct(
         private readonly AssetCollectionFactory $assetCollectionFactory,
@@ -60,7 +67,7 @@ class PurgeMadeAssets implements DataPatchInterface
         $unplaced = $this->purgeUnplaced();
 
         $this->logger->info(sprintf(
-            'Made assets purged for 3.0: %d deleted (%d MB) and %d could not be; %d with no kind deleted (%d MB) and %d could not be',
+            'Made assets purged for 3.0: %d deleted (%d MB) and %d could not be; %d resized copies with no kind deleted (%d MB) and %d could not be',
             $made['deleted'],
             intdiv($made['sizeKb'], 1024),
             $made['failed'],
@@ -102,7 +109,7 @@ class PurgeMadeAssets implements DataPatchInterface
                     $deletedThisPass++;
                 } catch (Throwable $exception) {
                     $failed++;
-                    $this->logger->warning(sprintf('Asset %d with no kind could not be deleted: %s', $id, $exception->getMessage()));
+                    $this->logger->warning(sprintf('Resized asset %d with no kind could not be deleted: %s', $id, $exception->getMessage()));
                 }
             }
 
@@ -122,6 +129,7 @@ class PurgeMadeAssets implements DataPatchInterface
     {
         $collection = $this->assetCollectionFactory->create();
         $collection->addFieldToFilter(AssetInterface::KIND, ['null' => true]);
+        $collection->addFieldToFilter(AssetInterface::FILE_PATH, ['like' => self::RESIZED_PATH_PREFIX . '%']);
         $collection->setPageSize(self::BATCH_SIZE);
 
         return array_map('intval', $collection->getAllIds());

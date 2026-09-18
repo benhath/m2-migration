@@ -18,10 +18,10 @@ use Psr\Log\LoggerInterface;
  *
  * Years of renamed fields, removed extensions and settings saved at their default leave core_config_data full of
  * rows an admin cannot see or that stop a new default from reaching the store. This is bin/magento
- * config:remove-defaults and config:remove-unused, both run once. It waits for every patch here that moves or
+ * ben:config:remove-defaults and ben:config:remove-unused, both run once. It waits for every patch here that moves or
  * retires config, because a path those still have to carry across must not be removed first. Rows belonging to a
  * module that is only switched off are never touched, and nothing outside core_config_data is: the setup_module
- * rows and tables a removed module left behind are for config:remove-unused to report and a person to drop.
+ * rows and tables a removed module left behind are for ben:config:remove-unused to report and a person to drop.
  *
  * This runs unattended inside setup:upgrade, so two things are true of it. The whole list of what is about to go
  * is written to the log before a single row is deleted, which is the only record there will be of a row nobody

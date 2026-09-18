@@ -236,7 +236,7 @@ sites do not run the same modules. Every patch can be run again over a database 
   or the new foreign keys fail to create. Dev had 0.
 - **Agree where the leftover-table dumps go and clear them afterwards.** The drop writes dotdigital, amazon and
   yotpo data into that site's `backups/work/removed-modules`. Running
-  `bin/magento config:remove-unused --dry-run --drop-leftovers` on live first shows the list before the upgrade
+  `bin/magento ben:config:remove-unused --dry-run --drop-leftovers` on live first shows the list before the upgrade
   does it.
 - **Turn Magento's free shipping carrier on if the shop wants free delivery.** The threshold number is carried
   over, but the carrier's on/off flag is deliberately not touched: enabling free shipping is a shipping decision,

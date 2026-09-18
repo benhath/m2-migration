@@ -19,7 +19,7 @@ use Throwable;
  * Amazon, Dotdigital, Klarna, Vertex, Yotpo and a handful of Magento modules were taken out with composer, which
  * never runs an extension's own uninstall, so their tables and version rows have been carried through every
  * upgrade since. Ben_Clean works out which they are, conservatively: a table has to belong to a module with no
- * code left anywhere and be declared by no installed module. This is bin/magento config:remove-unused
+ * code left anywhere and be declared by no installed module. This is bin/magento ben:config:remove-unused
  * --drop-leftovers, run once, and it is here rather than in a hand script because the migration module is what
  * carries the switchover and will meet the same leftovers on the other sites.
  *
@@ -75,7 +75,7 @@ class DropRemovedModuleLeftovers implements DataPatchInterface, NonTransactionab
         if ($refusal !== '') {
             $this->logger->warning(sprintf(
                 'Ben_Migration dropped none of the %d leftover(s) listed above: %s. Nothing is lost and the upgrade'
-                . ' carries on; run bin/magento config:remove-unused --drop-leftovers by hand once it can be',
+                . ' carries on; run bin/magento ben:config:remove-unused --drop-leftovers by hand once it can be',
                 count($planned),
                 $refusal,
             ));
